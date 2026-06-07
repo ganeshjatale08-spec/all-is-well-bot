@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum ApptStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum FollowType {
+  BOOKING_CONFIRMATION
+  REMINDER_24H
+  FEEDBACK_4H
+  WELLNESS_RECURRENCE
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Patient {
+  id                String          @id @default(cuid())
+  phone             String          @unique
+  name              String?
+  contact_phone     String?         // editable contact number (may differ from WA number)
+  address           String?         // home / billing address
+  is_human_handover Boolean         @default(false)
+  created_at        DateTime        @default(now())
+
+  appointments      Appointment[]
+  session           ChatSession?
+  followUps         FollowUpQueue[]
+}
+
+model Appointment {
+  id          String     @id @default(cuid())
+  patient_id  String
+  patient     Patient    @relation(fields: [patient_id], references: [id])
+  department  String
+  specialist  String
+  appt_date   DateTime
+  status      ApptStatus @default(PENDING)
+  pkg_name    String?    // wellness package booked, if any
+  created_at  DateTime   @default(now())
+
+  followUps   FollowUpQueue[]
+
+  @@index([patient_id])
+  @@index([appt_date])
+}
+
+model ChatSession {
+  id          String   @id @default(cuid())
+  patient_id  String   @unique           // one active session per patient
+  patient     Patient  @relation(fields: [patient_id], references: [id])
+  state       String   @default("MAIN_MENU")
+  context     Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model FollowUpQueue {
+  id          String     @id @default(cuid())
+  patient_id  String
+  patient     Patient    @relation(fields: [patient_id], references: [id])
+  type        FollowType
+  sent        Boolean    @default(false)
+  appt_id     String?
+  appointment Appointment? @relation(fields: [appt_id], references: [id])
+  scheduled_at DateTime?
+  created_at   DateTime   @default(now())
+
+  @@index([patient_id])
+  @@index([sent, scheduled_at])
+}
