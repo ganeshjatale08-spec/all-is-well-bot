@@ -14,6 +14,7 @@ import {
   type Sex,
 } from '../../domain/metrics';
 import { calculateDailyScoreBreakdown } from '../../domain/scoring';
+import { AiInsightCard } from '../../features/ai/components/AiInsightCard';
 import { useStreaksAndBadges } from '../../features/gamification/hooks/useStreaks';
 import { useProfile } from '../../features/onboarding/hooks/useProfile';
 import { useTodayStatus } from '../../features/journal/hooks/useDailyLog';
@@ -157,6 +158,8 @@ export default function Home() {
           <Stat value={waterActual.toFixed(1)} unit="L" label="Water" />
           <Stat value={dailyLog?.steps ?? 0} label="Steps" />
         </View>
+
+        <AiInsightCard />
       </View>
     </Screen>
   );
