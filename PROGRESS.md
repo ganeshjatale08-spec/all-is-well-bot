@@ -34,11 +34,11 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 - [x] Progressive-completion entry points in Profile for Step 3 fields
 
 ## Phase 3 — Daily journal & scoring
-- [ ] Migrations: `daily_logs` + `food_entries`/`water_entries`/`supplement_entries`/`workout_entries`/`symptom_entries`, `foods` (BACKEND_SCHEMA §3–4) + RLS + pg_trgm
-- [ ] Seed `foods` (curated IFCT-based ~1,500 Indian + common items)
-- [ ] `domain/nutrition.ts`: macro summing (tested) · `domain/scoring.ts`: deterministic daily score (tested)
-- [ ] UI kit: Card, Button, Stat, Input, Stepper, Slider, BottomSheet, ActionSheet, Toast, EmptyState (FRONTEND_DESIGN §5)
-- [ ] **Today Ring** component (svg + reanimated; FRONTEND_DESIGN §6) with a11y summary
+- [x] Migrations: `daily_logs` + `food_entries`/`water_entries`/`supplement_entries`/`workout_entries`/`symptom_entries`, `foods` (BACKEND_SCHEMA §3–4) + RLS + pg_trgm
+- [x] Seed `foods` (curated starter set; see decisions log — full ~1,500-item IFCT catalog deferred to backlog)
+- [x] `domain/nutrition.ts`: macro summing (tested) · `domain/scoring.ts`: deterministic daily score (tested)
+- [x] UI kit: Card, Button, Stat, Input, Stepper, Slider, BottomSheet, ActionSheet, Toast, EmptyState (FRONTEND_DESIGN §5)
+- [x] **Today Ring** component (svg + reanimated; FRONTEND_DESIGN §6) with a11y summary
 - [ ] Home screen: ring + today stats + streak + ⊕ quick-log
 - [ ] Journal screen + all log sheets (food search, water, sleep, workout, mood, symptom)
 - [ ] Offline-first writes + background sync (TRD §7); instant score update
@@ -102,12 +102,13 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 - [ ] Voice health assistant
 - [ ] Direct web subscription (Razorpay) to avoid store cut for web signups
 - [ ] Corporate wellness / senior modes
+- [ ] Expand `foods` from the ~150-item curated starter set to the full ~1,500-item IFCT-based catalog (license/source a real dataset rather than hand-authoring); backfill `name_hi` Hindi names
 
 ---
 
 ## Decisions log (record as you go)
 - [ ] Phone OTP at launch? (decision: …)
-- [ ] Nutrition DB: curated seed vs licensed source (decision: …)
+- [x] Nutrition DB: curated seed vs licensed source (decision: seeded a curated ~150-item starter catalog of common Indian + everyday foods with representative macros, not lab-measured. The full ~1,500-item IFCT-based catalog from the original Phase 3 scope isn't something to hand-author accurately without a licensed source — deferred to backlog as a dedicated data-import task.)
 - [ ] Hindi at launch vs v1.1 (decision: …)
 - [ ] Daily AI batch time / quiet hours default (decision: …)
 
