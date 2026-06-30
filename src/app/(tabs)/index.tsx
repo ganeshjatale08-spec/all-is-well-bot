@@ -6,8 +6,15 @@ import { Stat } from '../../components/ui/Stat';
 import { StreakFlame } from '../../components/ui/StreakFlame';
 import { TodayRing, type RingArc } from '../../components/ui/TodayRing';
 import { deterministicHeadline } from '../../domain/coachLine';
-import { calculateDailyTargets, type ActivityLevel, type Goal, type Sex } from '../../domain/metrics';
+import {
+  calculateDailyTargets,
+  type ActivityLevel,
+  type DailyTargets,
+  type Goal,
+  type Sex,
+} from '../../domain/metrics';
 import { calculateDailyScoreBreakdown } from '../../domain/scoring';
+import { useStreaksAndBadges } from '../../features/gamification/hooks/useStreaks';
 import { useProfile } from '../../features/onboarding/hooks/useProfile';
 import { useTodayStatus } from '../../features/journal/hooks/useDailyLog';
 
@@ -23,6 +30,34 @@ export default function Home() {
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: todayStatus, isLoading: statusLoading } = useTodayStatus();
 
+  const hasBasics =
+    !!profile?.sex &&
+    !!profile.weight_kg &&
+    !!profile.height_cm &&
+    !!profile.age &&
+    !!profile.activity_level &&
+    !!profile.primary_goal;
+
+  // Computed (when possible) before any early return so useStreaksAndBadges
+  // below is always called in the same order, per rules of hooks.
+  const targets: DailyTargets | null = hasBasics
+    ? calculateDailyTargets({
+        sex: profile!.sex as Sex,
+        weightKg: profile!.weight_kg!,
+        heightCm: profile!.height_cm!,
+        age: profile!.age!,
+        activityLevel: profile!.activity_level as ActivityLevel,
+        goal: profile!.primary_goal as Goal,
+      })
+    : null;
+
+  const { data: streaks } = useStreaksAndBadges({
+    waterActualL: todayStatus?.dailyLog?.water_l ?? 0,
+    waterTargetL: targets?.waterTargetL ?? 0,
+    proteinActualG: todayStatus?.macros.proteinG ?? 0,
+    proteinTargetG: targets?.proteinTargetG ?? 0,
+  });
+
   if (profileLoading || statusLoading || !profile || !todayStatus) {
     return (
       <Screen>
@@ -33,10 +68,7 @@ export default function Home() {
     );
   }
 
-  const hasBasics =
-    profile.sex && profile.weight_kg && profile.height_cm && profile.age && profile.activity_level && profile.primary_goal;
-
-  if (!hasBasics) {
+  if (!hasBasics || !targets) {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center">
@@ -47,15 +79,6 @@ export default function Home() {
       </Screen>
     );
   }
-
-  const targets = calculateDailyTargets({
-    sex: profile.sex as Sex,
-    weightKg: profile.weight_kg!,
-    heightCm: profile.height_cm!,
-    age: profile.age!,
-    activityLevel: profile.activity_level as ActivityLevel,
-    goal: profile.primary_goal as Goal,
-  });
 
   const { dailyLog, macros, workoutMinutes, symptomSeverities } = todayStatus;
   const hasLoggedToday = dailyLog !== null;
@@ -115,7 +138,7 @@ export default function Home() {
           <Text className="font-display text-xl text-ink">
             {greeting()}{firstName ? `, ${firstName}` : ''}
           </Text>
-          <StreakFlame count={0} />
+          <StreakFlame count={streaks?.checkinCurrent ?? 0} />
         </View>
 
         <View className="items-center">

@@ -4,6 +4,7 @@ import { queryClient } from '../../../lib/queryClient';
 import { supabase } from '../../../lib/supabase';
 import { useToastStore } from '../../../lib/toast';
 import { generateLocalId } from '../../../lib/uuid';
+import { streaksQueryKey } from '../../gamification/hooks/useStreaks';
 import type {
   FoodCustomEntryInput,
   MoodEntryInput,
@@ -68,6 +69,10 @@ function invalidateToday(userId: string) {
   const today = todayDateString();
   queryClient.invalidateQueries({ queryKey: ['todayStatus', userId, today] });
   queryClient.invalidateQueries({ queryKey: ['journalDay', userId, today] });
+  // Streaks/badges depend on server-confirmed history, so this recheck
+  // happens post-settle rather than optimistically (HARD RULE 7 covers the
+  // journal write itself, not derived gamification state).
+  queryClient.invalidateQueries({ queryKey: streaksQueryKey(userId) });
 }
 
 // Synthesizes a placeholder daily_logs row when none is cached yet, so the
