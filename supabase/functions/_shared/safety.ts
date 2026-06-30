@@ -52,6 +52,19 @@ const RED_FLAG_TEMPLATE: AnalysisText = {
   tomorrow_focus: 'Prioritize getting checked out; log how you feel for your own record.',
 };
 
+// Shared coarse screen for any other AI-generated health copy (weekly/
+// monthly report narratives, goal rationale) that isn't shaped like daily's
+// AnalysisText. Callers own their own safe fallback shape since reports and
+// goals have different JSON structures than the daily analysis.
+export function hasUnsafeContent(combinedText: string): boolean {
+  return (
+    DOSING_PATTERN.test(combinedText) ||
+    DIAGNOSIS_PATTERN.test(combinedText) ||
+    FALSE_REASSURANCE_PATTERN.test(combinedText) ||
+    EXTREME_DEFICIT_PATTERN.test(combinedText)
+  );
+}
+
 export function runSafetyPostCheck(text: AnalysisText, hasRedFlag: boolean): AnalysisText {
   const combined = `${text.headline} ${text.insight} ${text.recommendation} ${text.tomorrow_focus}`;
 

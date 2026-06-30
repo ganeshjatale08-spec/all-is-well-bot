@@ -1,4 +1,4 @@
-// Mirror of src/domain/{metrics,nutrition,scoring}.ts for the Deno Edge
+// Mirror of src/domain/{metrics,nutrition,scoring,goals}.ts for the Deno Edge
 // Function runtime (HARD RULE 2: the LLM never does arithmetic — Edge
 // Functions recompute the same deterministic numbers server-side before
 // prompting Gemini). Mirrored rather than imported because Metro (RN) and
@@ -7,8 +7,8 @@
 // schemas shared between the client and Edge Function I/O.
 //
 // KEEP IN SYNC with src/domain/metrics.ts, src/domain/nutrition.ts,
-// src/domain/scoring.ts. Any change to weights/targets/formulas there must
-// be copied here too.
+// src/domain/scoring.ts, src/domain/goals.ts. Any change to
+// weights/targets/formulas there must be copied here too.
 
 // ---- metrics.ts ----
 
@@ -248,4 +248,86 @@ export function calculateDailyScoreBreakdown(input: DailyScoreInput): DailyScore
   const total = Math.round(clamp(weightedTotal - symptomPenalty, 0, 100));
 
   return { calorieScore, proteinScore, waterScore, sleepScore, activityScore, symptomPenalty, total };
+}
+
+// ---- goals.ts ----
+
+const SAFE_MONTHLY_WEIGHT_LOSS_KG = 2;
+const SAFE_MONTHLY_WEIGHT_GAIN_KG = 1.5;
+
+export function calculateMonthlyTargetWeightKg(
+  goal: Goal,
+  currentWeightKg: number,
+  targetWeightKg: number | null,
+): number | null {
+  if (targetWeightKg === null) return null;
+  if (goal === 'weight_loss') {
+    return Math.max(currentWeightKg - SAFE_MONTHLY_WEIGHT_LOSS_KG, targetWeightKg);
+  }
+  if (goal === 'weight_gain' || goal === 'muscle_gain') {
+    return Math.min(currentWeightKg + SAFE_MONTHLY_WEIGHT_GAIN_KG, targetWeightKg);
+  }
+  return targetWeightKg;
+}
+
+const DEFAULT_STEPS_GOAL = 8000;
+const STEPS_GOAL_FLOOR = 6000;
+const STEPS_GOAL_CEILING = 15000;
+const STEPS_PROGRESSION_FACTOR = 1.1;
+const STEPS_ROUNDING = 500;
+
+export function calculateDailyStepGoal(avgStepsLastMonth: number | null): number {
+  if (avgStepsLastMonth === null || avgStepsLastMonth <= 0) return DEFAULT_STEPS_GOAL;
+  const progressed = avgStepsLastMonth * STEPS_PROGRESSION_FACTOR;
+  const rounded = Math.round(progressed / STEPS_ROUNDING) * STEPS_ROUNDING;
+  return clamp(rounded, STEPS_GOAL_FLOOR, STEPS_GOAL_CEILING);
+}
+
+const WORKOUT_BASELINE_BY_ACTIVITY: Record<ActivityLevel, number> = {
+  sedentary: 2,
+  lightly_active: 3,
+  moderately_active: 4,
+  very_active: 5,
+};
+const WORKOUT_GOAL_CEILING = 6;
+
+export function calculateWorkoutGoalPerWeek(
+  activityLevel: ActivityLevel,
+  avgWorkoutsPerWeekLastMonth: number | null,
+): number {
+  const baseline = WORKOUT_BASELINE_BY_ACTIVITY[activityLevel];
+  if (avgWorkoutsPerWeekLastMonth === null) return baseline;
+  const matchedPace = Math.round(Math.max(avgWorkoutsPerWeekLastMonth, baseline));
+  const stretch = avgWorkoutsPerWeekLastMonth >= baseline ? 1 : 0;
+  return Math.min(matchedPace + stretch, WORKOUT_GOAL_CEILING);
+}
+
+export type MonthlyGoalInput = {
+  weightKg: number;
+  age: number;
+  goal: Goal;
+  activityLevel: ActivityLevel;
+  targetWeightKg: number | null;
+  avgStepsLastMonth: number | null;
+  avgWorkoutsPerWeekLastMonth: number | null;
+};
+
+export type MonthlyGoalTargets = {
+  targetWeightKg: number | null;
+  dailyStepGoal: number;
+  sleepGoalHours: number;
+  waterGoalL: number;
+  proteinGoalG: number;
+  workoutGoalPerWeek: number;
+};
+
+export function calculateMonthlyGoals(input: MonthlyGoalInput): MonthlyGoalTargets {
+  return {
+    targetWeightKg: calculateMonthlyTargetWeightKg(input.goal, input.weightKg, input.targetWeightKg),
+    dailyStepGoal: calculateDailyStepGoal(input.avgStepsLastMonth),
+    sleepGoalHours: calculateSleepTargetHours(input.age),
+    waterGoalL: calculateWaterTargetL(input.weightKg),
+    proteinGoalG: Math.round(calculateProteinTargetG(input.weightKg, input.goal)),
+    workoutGoalPerWeek: calculateWorkoutGoalPerWeek(input.activityLevel, input.avgWorkoutsPerWeekLastMonth),
+  };
 }

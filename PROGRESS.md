@@ -2,7 +2,7 @@
 
 Build **one phase at a time**. After each phase: lint + typecheck + test, commit, review, then continue. Tick boxes as you go and add tasks you discover. Status legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 
-**Current phase:** Phase 4
+**Current phase:** Phase 5
 **MVP = Phases 0–7.** Phases 8–9 are post-MVP (v1.1).
 
 ---
@@ -54,12 +54,16 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 - [x] Verify Free tier makes **zero** Gemini calls
 
 ## Phase 5 — Reports & goals
-- [ ] Migrations: `reports`, `goals` (BACKEND_SCHEMA §5) + RLS
-- [ ] `weekly-report` function (Flash-Lite) + Sunday cron + notification
-- [ ] `monthly-report` function (2.5 Flash) + month-end cron
-- [ ] `goal-generator`: numeric goals from formulas, LLM frames rationale; store in `goals`
-- [ ] Insights tab: trend charts (gifted-charts) + range toggle + report cards
-- [ ] Report screen; **PDF export** (expo-print) + **share link** (signed URL + `share_token`)
+- [x] Migrations: `reports`, `goals` (BACKEND_SCHEMA §5) + RLS + `report-pdfs` private bucket
+- [x] `weekly-report` function (Flash-Lite) + Sunday cron (15:30 UTC / 21:00 IST)
+- [x] `monthly-report` function (2.5 Flash) + month-end daily cron (IST last-day check)
+- [x] `goal-generator`: numeric goals from formulas (`src/domain/goals.ts`, mirrored in `_shared/domain.ts`), LLM frames rationale; stored in `goals`; wired into month-end cron
+- [x] `report-share` Edge Function: generates + persists `share_token` (idempotent, monthly only)
+- [x] Shared helpers: `_shared/reportAggregation.ts` (bulk-recompute, `WeeklyFacts`/`MonthlyFacts`), `_shared/prompt.ts` (weekly/monthly/goal-generator prompts), `_shared/gemini.ts` (weekly/monthly/goal models + schemas), `_shared/safety.ts` (`hasUnsafeContent`)
+- [x] Client schemas: `src/schemas/reports.ts` (discriminated weekly/monthly), `src/schemas/goals.ts`
+- [x] Client hooks: `src/features/reports/hooks/useReports.ts`, `useGoals.ts`, `useTrends.ts` (bulk daily recompute for charts)
+- [x] Insights tab: range toggle (week/month/3-month), line/bar charts (score/steps/sleep/water/protein/weight), report cards (Pro), goals card (Pro), LockedCard for Free
+- [x] `report/[id]` screen: full weekly/monthly content, **PDF export** (expo-print + expo-sharing), **share link** (share_token → native Share sheet)
 
 ## Phase 6 — Subscriptions
 - [ ] RevenueCat setup; products Pro/Family/Advanced (monthly + annual) in App Store Connect & Play Console
