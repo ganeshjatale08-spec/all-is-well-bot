@@ -20,6 +20,7 @@ import {
 import { queryClient } from '../lib/queryClient';
 import { SessionProvider, useSession } from '../features/auth/SessionProvider';
 import { useProfile } from '../features/onboarding/hooks/useProfile';
+import { Toast } from '../components/ui/Toast';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -73,6 +74,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <RootNavigator />
+        <Toast />
       </SessionProvider>
     </QueryClientProvider>
   );

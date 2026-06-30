@@ -61,3 +61,47 @@ export const GOAL_LABELS: Record<(typeof GOAL_OPTIONS)[number], string> = {
   diabetes_management: 'Diabetes management',
   general_fitness: 'General fitness',
 };
+
+export const MEAL_LABELS: Record<(typeof MEAL_OPTIONS)[number], string> = {
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  snack: 'Snack',
+};
+
+export const WORKOUT_LABELS: Record<(typeof WORKOUT_OPTIONS)[number], string> = {
+  gym: 'Gym',
+  running: 'Running',
+  walking: 'Walking',
+  yoga: 'Yoga',
+  cycling: 'Cycling',
+  home_workout: 'Home workout',
+};
+
+export const MOOD_LABELS: Record<(typeof MOOD_OPTIONS)[number], string> = {
+  happy: 'Happy',
+  normal: 'Normal',
+  stressed: 'Stressed',
+  sad: 'Sad',
+  angry: 'Angry',
+};
+
+// symptom_entries.symptom is free text, not a Postgres enum (BACKEND_SCHEMA
+// §4) — these are just suggested quick-pick values; custom text is allowed.
+export const SYMPTOM_OPTIONS = [
+  'headache',
+  'acidity',
+  'constipation',
+  'body_pain',
+  'fever',
+  'fatigue',
+] as const;
+
+export const SYMPTOM_LABELS: Record<(typeof SYMPTOM_OPTIONS)[number], string> = {
+  headache: 'Headache',
+  acidity: 'Acidity',
+  constipation: 'Constipation',
+  body_pain: 'Body pain',
+  fever: 'Fever',
+  fatigue: 'Fatigue',
+};
