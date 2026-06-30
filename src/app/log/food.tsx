@@ -60,23 +60,23 @@ export default function LogFood() {
 
   const onAddSelectedFood = () => {
     if (!requireMeal() || !selectedFood || !meal) return;
-    logFoodFromDb.mutate(
-      {
-        meal,
-        food_id: selectedFood.id,
-        servings,
-        kcal: selectedFood.kcal,
-        protein_g: selectedFood.protein_g,
-        carbs_g: selectedFood.carbs_g,
-        fat_g: selectedFood.fat_g,
-      },
-      { onSuccess: () => router.back() },
-    );
+    logFoodFromDb.mutate({
+      meal,
+      food_id: selectedFood.id,
+      food_name: selectedFood.name,
+      servings,
+      kcal: selectedFood.kcal,
+      protein_g: selectedFood.protein_g,
+      carbs_g: selectedFood.carbs_g,
+      fat_g: selectedFood.fat_g,
+    });
+    router.back();
   };
 
   const onSubmitCustom = handleSubmit((values) => {
     if (!requireMeal() || !meal) return;
-    logCustomFood.mutate({ ...values, meal }, { onSuccess: () => router.back() });
+    logCustomFood.mutate({ ...values, meal });
+    router.back();
   });
 
   return (
@@ -136,12 +136,7 @@ export default function LogFood() {
             >
               <Text className="font-body-medium text-sm text-primary">Choose a different food</Text>
             </Pressable>
-            {logFoodFromDb.isError ? (
-              <Text className="font-body-medium text-sm text-danger">
-                {logFoodFromDb.error instanceof Error ? logFoodFromDb.error.message : "Couldn't log food."}
-              </Text>
-            ) : null}
-            <Button label="Add to today" onPress={onAddSelectedFood} loading={logFoodFromDb.isPending} />
+            <Button label="Add to today" onPress={onAddSelectedFood} />
           </View>
         ) : null}
 
@@ -225,12 +220,7 @@ export default function LogFood() {
             >
               <Text className="font-body-medium text-sm text-primary">Back to search</Text>
             </Pressable>
-            {logCustomFood.isError ? (
-              <Text className="font-body-medium text-sm text-danger">
-                {logCustomFood.error instanceof Error ? logCustomFood.error.message : "Couldn't log food."}
-              </Text>
-            ) : null}
-            <Button label="Add to today" onPress={onSubmitCustom} loading={logCustomFood.isPending} />
+            <Button label="Add to today" onPress={onSubmitCustom} />
           </View>
         ) : null}
       </View>

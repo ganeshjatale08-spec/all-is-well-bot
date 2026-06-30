@@ -310,14 +310,16 @@ export default function Journal() {
                       placeholder="e.g. Vitamin D"
                       onSubmitEditing={() => {
                         if (!supplementName.trim()) return;
-                        logSupplement.mutate(supplementName.trim(), { onSuccess: () => setSupplementName('') });
+                        logSupplement.mutate(supplementName.trim());
+                        setSupplementName('');
                       }}
                     />
                   </View>
                   <Pressable
                     onPress={() => {
                       if (!supplementName.trim()) return;
-                      logSupplement.mutate(supplementName.trim(), { onSuccess: () => setSupplementName('') });
+                      logSupplement.mutate(supplementName.trim());
+                      setSupplementName('');
                     }}
                     accessibilityRole="button"
                     accessibilityLabel="Add supplement"

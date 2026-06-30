@@ -30,7 +30,8 @@ export default function LogSymptom() {
       return;
     }
     setError(undefined);
-    logSymptom.mutate(parsed.data, { onSuccess: () => router.back() });
+    logSymptom.mutate(parsed.data);
+    router.back();
   };
 
   return (
@@ -58,13 +59,9 @@ export default function LogSymptom() {
         />
         <Slider label="Severity (optional)" value={severity} onChange={setSeverity} />
 
-        {error || logSymptom.isError ? (
-          <Text className="font-body-medium text-sm text-danger">
-            {error ?? (logSymptom.error instanceof Error ? logSymptom.error.message : "Couldn't log symptom.")}
-          </Text>
-        ) : null}
+        {error ? <Text className="font-body-medium text-sm text-danger">{error}</Text> : null}
 
-        <Button label="Log symptom" onPress={onSubmit} loading={logSymptom.isPending} />
+        <Button label="Log symptom" onPress={onSubmit} />
       </View>
     </Screen>
   );

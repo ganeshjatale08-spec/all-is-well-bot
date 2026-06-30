@@ -42,7 +42,7 @@ export function todayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
-function todayStatusQueryKey(userId: string | undefined) {
+export function todayStatusQueryKey(userId: string | undefined) {
   return ['todayStatus', userId, todayDateString()] as const;
 }
 
@@ -134,7 +134,7 @@ export type JournalDay = {
   supplementEntries: JournalSupplementEntry[];
 };
 
-const EMPTY_JOURNAL_DAY: JournalDay = {
+export const EMPTY_JOURNAL_DAY: JournalDay = {
   dailyLog: null,
   foodEntries: [],
   waterEntries: [],
@@ -143,8 +143,30 @@ const EMPTY_JOURNAL_DAY: JournalDay = {
   supplementEntries: [],
 };
 
-function journalDayQueryKey(userId: string | undefined, date: string) {
+export function journalDayQueryKey(userId: string | undefined, date: string) {
   return ['journalDay', userId, date] as const;
+}
+
+// Projects a JournalDay onto the TodayStatus shape so optimistic mutations
+// (useLogMutations) can patch both the Journal screen's cache and the Home
+// ring's cache from a single updated entry list and never disagree.
+export function deriveTodayStatus(day: JournalDay): TodayStatus {
+  const macroEntries: FoodEntryMacros[] = day.foodEntries.map((entry) => ({
+    servings: entry.servings,
+    kcal: entry.kcal,
+    proteinG: entry.protein_g,
+    carbsG: entry.carbs_g,
+    fatG: entry.fat_g,
+  }));
+
+  return {
+    dailyLog: day.dailyLog,
+    macros: sumMacros(macroEntries),
+    workoutMinutes: day.workoutEntries.reduce((sum, entry) => sum + entry.duration_min, 0),
+    symptomSeverities: day.symptomEntries
+      .map((entry) => entry.severity)
+      .filter((severity): severity is number => severity !== null),
+  };
 }
 
 // Full day view for the Journal screen (UI_UX_DESIGN §4) — every section's

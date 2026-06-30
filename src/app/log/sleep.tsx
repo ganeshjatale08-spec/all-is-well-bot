@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Screen } from '../../components/ui/Screen';
@@ -19,7 +19,8 @@ export default function LogSleep() {
   const onSubmit = () => {
     const parsed = sleepEntrySchema.safeParse({ sleep_hours: sleepHours, sleep_quality: sleepQuality });
     if (!parsed.success) return;
-    logSleep.mutate(parsed.data, { onSuccess: () => router.back() });
+    logSleep.mutate(parsed.data);
+    router.back();
   };
 
   return (
@@ -30,13 +31,7 @@ export default function LogSleep() {
         <Stepper label="Hours slept" value={sleepHours} onChange={setSleepHours} min={0} max={14} step={0.5} unit="h" />
         <Slider label="Sleep quality (optional)" value={sleepQuality} onChange={setSleepQuality} />
 
-        {logSleep.isError ? (
-          <Text className="font-body-medium text-sm text-danger">
-            {logSleep.error instanceof Error ? logSleep.error.message : "Couldn't log sleep."}
-          </Text>
-        ) : null}
-
-        <Button label="Log sleep" onPress={onSubmit} loading={logSleep.isPending} />
+        <Button label="Log sleep" onPress={onSubmit} />
       </View>
     </Screen>
   );

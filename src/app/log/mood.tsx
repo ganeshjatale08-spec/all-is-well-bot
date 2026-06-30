@@ -28,7 +28,8 @@ export default function LogMood() {
       return;
     }
     setError(undefined);
-    logMood.mutate(parsed.data, { onSuccess: () => router.back() });
+    logMood.mutate(parsed.data);
+    router.back();
   };
 
   return (
@@ -40,13 +41,9 @@ export default function LogMood() {
         <Slider label="Energy (optional)" value={energyLevel} onChange={setEnergyLevel} />
         <Slider label="Stress (optional)" value={stressLevel} onChange={setStressLevel} />
 
-        {error || logMood.isError ? (
-          <Text className="font-body-medium text-sm text-danger">
-            {error ?? (logMood.error instanceof Error ? logMood.error.message : "Couldn't log mood.")}
-          </Text>
-        ) : null}
+        {error ? <Text className="font-body-medium text-sm text-danger">{error}</Text> : null}
 
-        <Button label="Log mood" onPress={onSubmit} loading={logMood.isPending} />
+        <Button label="Log mood" onPress={onSubmit} />
       </View>
     </Screen>
   );

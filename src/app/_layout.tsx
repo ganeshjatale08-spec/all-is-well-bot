@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import {
   Sora_500Medium,
   Sora_600SemiBold,
@@ -18,11 +18,19 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 
 import { queryClient } from '../lib/queryClient';
+import { asyncStoragePersister } from '../lib/persister';
+import { setupNetworkListener } from '../lib/network';
 import { SessionProvider, useSession } from '../features/auth/SessionProvider';
 import { useProfile } from '../features/onboarding/hooks/useProfile';
+import { registerJournalMutationDefaults } from '../features/journal/hooks/useLogMutations';
 import { Toast } from '../components/ui/Toast';
 
 SplashScreen.preventAutoHideAsync();
+
+// Must run before PersistQueryClientProvider resumes paused mutations on
+// rehydration — restored mutations have no component-supplied mutationFn
+// and rely entirely on these registered defaults (TRD §7).
+registerJournalMutationDefaults();
 
 function RootNavigator() {
   const { session, isLoading } = useSession();
@@ -66,16 +74,24 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  useEffect(() => setupNetworkListener(), []);
+
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: asyncStoragePersister }}
+      onSuccess={() => {
+        queryClient.resumePausedMutations();
+      }}
+    >
       <SessionProvider>
         <RootNavigator />
         <Toast />
       </SessionProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

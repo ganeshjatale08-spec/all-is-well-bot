@@ -27,7 +27,8 @@ export default function LogWorkout() {
       return;
     }
     setError(undefined);
-    logWorkout.mutate(parsed.data, { onSuccess: () => router.back() });
+    logWorkout.mutate(parsed.data);
+    router.back();
   };
 
   return (
@@ -38,13 +39,9 @@ export default function LogWorkout() {
         <OptionPicker label="Type" options={workoutOptions} value={workoutType} onChange={setWorkoutType} />
         <Stepper label="Duration" value={durationMin} onChange={setDurationMin} min={5} max={240} step={5} unit="min" />
 
-        {error || logWorkout.isError ? (
-          <Text className="font-body-medium text-sm text-danger">
-            {error ?? (logWorkout.error instanceof Error ? logWorkout.error.message : "Couldn't log workout.")}
-          </Text>
-        ) : null}
+        {error ? <Text className="font-body-medium text-sm text-danger">{error}</Text> : null}
 
-        <Button label="Log workout" onPress={onSubmit} loading={logWorkout.isPending} />
+        <Button label="Log workout" onPress={onSubmit} />
       </View>
     </Screen>
   );
