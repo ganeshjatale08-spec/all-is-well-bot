@@ -2,7 +2,7 @@
 
 Build **one phase at a time**. After each phase: lint + typecheck + test, commit, review, then continue. Tick boxes as you go and add tasks you discover. Status legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 
-**Current phase:** Phase 3
+**Current phase:** Phase 4
 **MVP = Phases 0–7.** Phases 8–9 are post-MVP (v1.1).
 
 ---
