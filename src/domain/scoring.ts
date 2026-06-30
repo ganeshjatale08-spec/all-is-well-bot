@@ -78,7 +78,20 @@ export function calculateSymptomPenalty(symptomSeverities: readonly number[]): n
   return clamp(raw, 0, SYMPTOM_PENALTY_CAP);
 }
 
-export function calculateDailyScore(input: DailyScoreInput): number {
+export type DailyScoreBreakdown = {
+  calorieScore: number;
+  proteinScore: number;
+  waterScore: number;
+  sleepScore: number;
+  activityScore: number;
+  symptomPenalty: number;
+  total: number;
+};
+
+// Exposes the five 0-100 sub-scores alongside the total — the Today Ring's
+// four arcs (FRONTEND_DESIGN §6, UI_UX_DESIGN §3) are driven by these same
+// numbers so the ring and the score can never disagree.
+export function calculateDailyScoreBreakdown(input: DailyScoreInput): DailyScoreBreakdown {
   const calorieScore = closenessScore(
     input.actualCalorieKcal,
     input.calorieTargetKcal,
@@ -106,7 +119,12 @@ export function calculateDailyScore(input: DailyScoreInput): number {
       activityScore * ACTIVITY_WEIGHT) /
     100;
 
-  const penalty = calculateSymptomPenalty(input.symptomSeverities);
+  const symptomPenalty = calculateSymptomPenalty(input.symptomSeverities);
+  const total = Math.round(clamp(weightedTotal - symptomPenalty, 0, 100));
 
-  return Math.round(clamp(weightedTotal - penalty, 0, 100));
+  return { calorieScore, proteinScore, waterScore, sleepScore, activityScore, symptomPenalty, total };
+}
+
+export function calculateDailyScore(input: DailyScoreInput): number {
+  return calculateDailyScoreBreakdown(input).total;
 }

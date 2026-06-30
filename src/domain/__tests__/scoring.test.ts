@@ -1,4 +1,4 @@
-import { calculateDailyScore, calculateSymptomPenalty } from '../scoring';
+import { calculateDailyScore, calculateDailyScoreBreakdown, calculateSymptomPenalty } from '../scoring';
 
 const PERFECT_DAY = {
   actualCalorieKcal: 2000,
@@ -92,6 +92,26 @@ describe('calculateDailyScore', () => {
       stepsTarget: 8000,
     });
     expect(withDefault).toBe(withExplicit);
+  });
+});
+
+describe('calculateDailyScoreBreakdown', () => {
+  it('returns all sub-scores at 100 and a matching total for a perfect day', () => {
+    const breakdown = calculateDailyScoreBreakdown(PERFECT_DAY);
+    expect(breakdown).toEqual({
+      calorieScore: 100,
+      proteinScore: 100,
+      waterScore: 100,
+      sleepScore: 100,
+      activityScore: 100,
+      symptomPenalty: 0,
+      total: 100,
+    });
+  });
+
+  it('total matches calculateDailyScore for the same input', () => {
+    const input = { ...PERFECT_DAY, actualCalorieKcal: 1000, symptomSeverities: [4] };
+    expect(calculateDailyScoreBreakdown(input).total).toBe(calculateDailyScore(input));
   });
 });
 

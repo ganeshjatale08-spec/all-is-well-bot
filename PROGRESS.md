@@ -39,7 +39,7 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 - [x] `domain/nutrition.ts`: macro summing (tested) · `domain/scoring.ts`: deterministic daily score (tested)
 - [x] UI kit: Card, Button, Stat, Input, Stepper, Slider, BottomSheet, ActionSheet, Toast, EmptyState (FRONTEND_DESIGN §5)
 - [x] **Today Ring** component (svg + reanimated; FRONTEND_DESIGN §6) with a11y summary
-- [ ] Home screen: ring + today stats + streak + ⊕ quick-log
+- [x] Real tab bar (Home · Journal · ⊕ quick-log · Insights · Profile) + Home screen: ring + today stats + streak + ⊕ quick-log
 - [ ] Journal screen + all log sheets (food search, water, sleep, workout, mood, symptom)
 - [ ] Offline-first writes + background sync (TRD §7); instant score update
 - [ ] `streaks` table + streak logic; basic badges (`badges`/`user_badges`)

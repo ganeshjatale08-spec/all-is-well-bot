@@ -1,25 +1,139 @@
-import { Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Screen } from '../../components/ui/Screen';
-import { Button } from '../../components/ui/Button';
-import { useSignOut } from '../../features/auth/hooks/useAuth';
+import { Stat } from '../../components/ui/Stat';
+import { StreakFlame } from '../../components/ui/StreakFlame';
+import { TodayRing, type RingArc } from '../../components/ui/TodayRing';
+import { deterministicHeadline } from '../../domain/coachLine';
+import { calculateDailyTargets, type ActivityLevel, type Goal, type Sex } from '../../domain/metrics';
+import { calculateDailyScoreBreakdown } from '../../domain/scoring';
+import { useProfile } from '../../features/onboarding/hooks/useProfile';
+import { useTodayStatus } from '../../features/journal/hooks/useDailyLog';
+
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export default function Home() {
   const router = useRouter();
-  const signOut = useSignOut();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: todayStatus, isLoading: statusLoading } = useTodayStatus();
+
+  if (profileLoading || statusLoading || !profile || !todayStatus) {
+    return (
+      <Screen>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator />
+        </View>
+      </Screen>
+    );
+  }
+
+  const hasBasics =
+    profile.sex && profile.weight_kg && profile.height_cm && profile.age && profile.activity_level && profile.primary_goal;
+
+  if (!hasBasics) {
+    return (
+      <Screen>
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-center font-body text-base text-ink-muted">
+            Finish your profile to see today&apos;s score.
+          </Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  const targets = calculateDailyTargets({
+    sex: profile.sex as Sex,
+    weightKg: profile.weight_kg!,
+    heightCm: profile.height_cm!,
+    age: profile.age!,
+    activityLevel: profile.activity_level as ActivityLevel,
+    goal: profile.primary_goal as Goal,
+  });
+
+  const { dailyLog, macros, workoutMinutes, symptomSeverities } = todayStatus;
+  const hasLoggedToday = dailyLog !== null;
+
+  const breakdown = calculateDailyScoreBreakdown({
+    actualCalorieKcal: macros.kcal,
+    calorieTargetKcal: targets.calorieTargetKcal,
+    actualProteinG: macros.proteinG,
+    proteinTargetG: targets.proteinTargetG,
+    actualWaterL: dailyLog?.water_l ?? 0,
+    waterTargetL: targets.waterTargetL,
+    actualSleepHours: dailyLog?.sleep_hours ?? 0,
+    sleepTargetHours: targets.sleepTargetHours,
+    steps: dailyLog?.steps ?? 0,
+    workoutMinutes,
+    symptomSeverities,
+  });
+
+  const coachLine = deterministicHeadline(breakdown.total, hasLoggedToday);
+  const waterActual = dailyLog?.water_l ?? 0;
+  const caloriesLeft = Math.max(0, Math.round(targets.calorieTargetKcal - macros.kcal));
+
+  const arcs: RingArc[] = [
+    {
+      key: 'caloriesProtein',
+      progress: (breakdown.calorieScore * 25 + breakdown.proteinScore * 20) / 45 / 100,
+      label: `Calories and protein, ${Math.round(macros.kcal)} of ${Math.round(targets.calorieTargetKcal)} kilocalories`,
+      onPress: () => router.push('/log/food'),
+    },
+    {
+      key: 'movement',
+      progress: breakdown.activityScore / 100,
+      label: `Movement, ${dailyLog?.steps ?? 0} steps`,
+      onPress: () => router.push('/log/workout'),
+    },
+    {
+      key: 'water',
+      progress: breakdown.waterScore / 100,
+      label: `Water, ${waterActual} of ${targets.waterTargetL.toFixed(1)} litres`,
+      onPress: () => router.push('/log/water'),
+    },
+    {
+      key: 'sleep',
+      progress: breakdown.sleepScore / 100,
+      label: `Sleep, ${dailyLog?.sleep_hours ?? 0} of ${targets.sleepTargetHours} hours`,
+      onPress: () => router.push('/log/sleep'),
+    },
+  ];
+
+  const accessibilitySummary = `Today: ${breakdown.total} of 100. Water ${waterActual} of ${targets.waterTargetL.toFixed(1)} litres.`;
+  const firstName = profile.full_name?.trim().split(/\s+/)[0];
 
   return (
-    <Screen>
-      <View className="flex-1 items-center justify-center gap-6">
-        <Text className="font-display text-xl text-ink">Saathi</Text>
-        <Button label="Profile" variant="secondary" onPress={() => router.push('/(tabs)/profile')} />
-        <Button
-          label="Sign out"
-          variant="ghost"
-          onPress={() => signOut.mutate()}
-          loading={signOut.isPending}
-        />
+    <Screen scroll>
+      <View className="gap-8">
+        <View className="flex-row items-center justify-between">
+          <Text className="font-display text-xl text-ink">
+            {greeting()}{firstName ? `, ${firstName}` : ''}
+          </Text>
+          <StreakFlame count={0} />
+        </View>
+
+        <View className="items-center">
+          <TodayRing
+            score={breakdown.total}
+            coachLine={coachLine}
+            arcs={arcs}
+            accessibilitySummary={accessibilitySummary}
+            onPressRing={() => router.push('/(tabs)/journal')}
+          />
+        </View>
+
+        <View className="flex-row flex-wrap justify-between gap-y-4">
+          <Stat value={caloriesLeft} unit="kcal" label="Calories left" />
+          <Stat value={Math.round(macros.proteinG)} unit="g" label="Protein" />
+          <Stat value={waterActual.toFixed(1)} unit="L" label="Water" />
+          <Stat value={dailyLog?.steps ?? 0} label="Steps" />
+        </View>
       </View>
     </Screen>
   );
