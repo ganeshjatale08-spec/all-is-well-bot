@@ -2,7 +2,7 @@
 
 Build **one phase at a time**. After each phase: lint + typecheck + test, commit, review, then continue. Tick boxes as you go and add tasks you discover. Status legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 
-**Current phase:** Phase 1
+**Current phase:** Phase 2
 **MVP = Phases 0–7.** Phases 8–9 are post-MVP (v1.1).
 
 ---
@@ -19,12 +19,12 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 - [x] Confirm/commit the commands block in CLAUDE.md
 
 ## Phase 1 — Auth & data layer
-- [ ] Supabase Auth: email sign-up/in, Google OAuth (phone OTP optional flag)
-- [ ] Session handling, protected route groups, sign-out clears secure store
-- [ ] TanStack Query provider + `lib/queryClient.ts`
-- [ ] Migrations: enums + `profiles` + `health_profiles` (BACKEND_SCHEMA §1–2) with RLS + updated_at triggers
-- [ ] Welcome / Sign-in / Sign-up screens (FRONTEND_DESIGN look)
-- [ ] zod schemas for auth + profile in `src/schemas`
+- [x] Supabase Auth: email sign-up/in, Google OAuth (phone OTP optional flag)
+- [x] Session handling, protected route groups, sign-out clears secure store
+- [x] TanStack Query provider + `lib/queryClient.ts`
+- [x] Migrations: enums + `profiles` + `health_profiles` (BACKEND_SCHEMA §1–2) with RLS + updated_at triggers
+- [x] Welcome / Sign-in / Sign-up screens (FRONTEND_DESIGN look)
+- [x] zod schemas for auth + profile in `src/schemas`
 
 ## Phase 2 — Onboarding & metrics (deterministic core)
 - [ ] `domain/metrics.ts`: BMI, BMR (Mifflin-St Jeor), TDEE, ideal-weight, targets — **unit tested, exact**
