@@ -19,22 +19,29 @@ import {
 
 import { queryClient } from '../lib/queryClient';
 import { SessionProvider, useSession } from '../features/auth/SessionProvider';
+import { useProfile } from '../features/onboarding/hooks/useProfile';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { session, isLoading } = useSession();
+  const { data: profile, isLoading: profileLoading } = useProfile();
 
-  if (isLoading) {
+  if (isLoading || (!!session && profileLoading)) {
     return null;
   }
+
+  const onboardingComplete = !!profile?.onboarding_complete;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={!!session && !onboardingComplete}>
+        <Stack.Screen name="(onboarding)" />
+      </Stack.Protected>
+      <Stack.Protected guard={!!session && onboardingComplete}>
         <Stack.Screen name="(tabs)" />
       </Stack.Protected>
     </Stack>

@@ -33,17 +33,38 @@ export const profileSchema = z.object({
 });
 export type ProfileInput = z.infer<typeof profileSchema>;
 
-// Step 1 — Basics (required, APP_FLOW.md §3.3): the minimum needed to
-// compute BMI/BMR/TDEE and unblock the Result screen.
-export const profileBasicsSchema = profileSchema.pick({
-  full_name: true,
-  age: true,
-  sex: true,
-  height_cm: true,
-  weight_kg: true,
-  primary_goal: true,
-});
+// Step 1 — Basics (required, APP_FLOW.md §3.3). Includes activity_level
+// (ahead of where APP_FLOW lists it in Step 2) so the Result screen can
+// compute real TDEE immediately instead of with a placeholder activity level.
+export const profileBasicsSchema = profileSchema
+  .pick({
+    full_name: true,
+    age: true,
+    sex: true,
+    height_cm: true,
+    weight_kg: true,
+    primary_goal: true,
+    activity_level: true,
+  })
+  .extend({
+    activity_level: z.enum(ACTIVITY_OPTIONS),
+  });
 export type ProfileBasicsInput = z.infer<typeof profileBasicsSchema>;
+
+// Step 2 — Lifestyle (APP_FLOW.md §3.5): activity_level has already been
+// collected in Step 1, so this step only needs diet type + target weight.
+export const profileLifestyleSchema = profileSchema.pick({
+  diet_type: true,
+  target_weight_kg: true,
+});
+export type ProfileLifestyleInput = z.infer<typeof profileLifestyleSchema>;
+
+// Consent (APP_FLOW.md §3.7): DPDP consent toggle + medical disclaimer
+// acknowledgement, required before onboarding_complete is set.
+export const consentSchema = z.object({
+  consentDpdp: z.literal(true, { error: 'You must accept to continue' }),
+});
+export type ConsentInput = z.infer<typeof consentSchema>;
 
 // Health profile (BACKEND_SCHEMA.md §2) — optional/sensitive, skippable Step 3.
 export const healthProfileSchema = z.object({

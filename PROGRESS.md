@@ -2,7 +2,7 @@
 
 Build **one phase at a time**. After each phase: lint + typecheck + test, commit, review, then continue. Tick boxes as you go and add tasks you discover. Status legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 
-**Current phase:** Phase 2
+**Current phase:** Phase 3
 **MVP = Phases 0–7.** Phases 8–9 are post-MVP (v1.1).
 
 ---
@@ -27,11 +27,11 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 - [x] zod schemas for auth + profile in `src/schemas`
 
 ## Phase 2 — Onboarding & metrics (deterministic core)
-- [ ] `domain/metrics.ts`: BMI, BMR (Mifflin-St Jeor), TDEE, ideal-weight, targets — **unit tested, exact**
-- [ ] Onboarding wizard: Step 1 basics (required) → Result → Step 2 lifestyle → Step 3 health (skippable) → Consent (APP_FLOW §3)
-- [ ] Persist profile/health_profile; set `onboarding_complete`, `consent_dpdp_at`
-- [ ] Result screen shows computed metrics + targets (the activation moment)
-- [ ] Progressive-completion entry points in Profile for Step 3 fields
+- [x] `domain/metrics.ts`: BMI, BMR (Mifflin-St Jeor), TDEE, ideal-weight, targets — **unit tested, exact**
+- [x] Onboarding wizard: Step 1 basics (required) → Result → Step 2 lifestyle → Step 3 health (skippable) → Consent (APP_FLOW §3)
+- [x] Persist profile/health_profile; set `onboarding_complete`, `consent_dpdp_at`
+- [x] Result screen shows computed metrics + targets (the activation moment)
+- [x] Progressive-completion entry points in Profile for Step 3 fields
 
 ## Phase 3 — Daily journal & scoring
 - [ ] Migrations: `daily_logs` + `food_entries`/`water_entries`/`supplement_entries`/`workout_entries`/`symptom_entries`, `foods` (BACKEND_SCHEMA §3–4) + RLS + pg_trgm
@@ -113,3 +113,5 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 
 ## Notes for next session
 > Leave a short note here at the end of each session: what's done, what's next, any blockers.
+
+**End of Phase 2 session:** Onboarding wizard (Step 1 basics incl. activity_level → Result → Step 2 lifestyle → Step 3 health (skippable) → Consent) is live under `(onboarding)`, gated in root layout via `profiles.onboarding_complete`. `domain/metrics.ts` is unit-tested (33/33 passing). Profile screen (`(tabs)/profile`) shows the same computed metrics and links to a shared `HealthProfileForm` for progressive Step 3 completion. Note: `activity_level` was moved from Step 2 into Step 1 (user-confirmed decision) so Result can compute real TDEE immediately — this is a deliberate deviation from APP_FLOW.md's literal step listing. Next: Phase 3 (daily journal & scoring) — `daily_logs` + entry tables, `domain/nutrition.ts` + `domain/scoring.ts`, UI kit expansion (Card/Stat/Stepper/Slider/BottomSheet/etc.), Today Ring, real tab bar (current `(tabs)/_layout.tsx` is still a placeholder Stack).

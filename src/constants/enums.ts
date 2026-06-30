@@ -29,3 +29,35 @@ export const MEAL_OPTIONS = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 export const WORKOUT_OPTIONS = ['gym', 'running', 'walking', 'yoga', 'cycling', 'home_workout'] as const;
 export const MOOD_OPTIONS = ['happy', 'normal', 'stressed', 'sad', 'angry'] as const;
 export const PLAN_OPTIONS = ['free', 'pro', 'family', 'advanced'] as const;
+
+// Human-readable labels for enum values, used by OptionPicker fields.
+export const SEX_LABELS: Record<(typeof SEX_OPTIONS)[number], string> = {
+  male: 'Male',
+  female: 'Female',
+  other: 'Other',
+};
+
+export const DIET_LABELS: Record<(typeof DIET_OPTIONS)[number], string> = {
+  vegetarian: 'Vegetarian',
+  non_vegetarian: 'Non-vegetarian',
+  eggetarian: 'Eggetarian',
+  vegan: 'Vegan',
+  jain: 'Jain',
+};
+
+export const ACTIVITY_LABELS: Record<(typeof ACTIVITY_OPTIONS)[number], string> = {
+  sedentary: 'Sedentary (little/no exercise)',
+  lightly_active: 'Lightly active (1-3 days/week)',
+  moderately_active: 'Moderately active (3-5 days/week)',
+  very_active: 'Very active (6-7 days/week)',
+};
+
+export const GOAL_LABELS: Record<(typeof GOAL_OPTIONS)[number], string> = {
+  weight_loss: 'Weight loss',
+  weight_gain: 'Weight gain',
+  muscle_gain: 'Muscle gain',
+  improve_sleep: 'Improve sleep',
+  stress_reduction: 'Stress reduction',
+  diabetes_management: 'Diabetes management',
+  general_fitness: 'General fitness',
+};
