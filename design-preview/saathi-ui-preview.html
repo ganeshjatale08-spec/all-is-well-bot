@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Saathi — UI Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Tokens ---------- */
+  :root{
+    --canvas:#F6F8F4; --surface:#FFFFFF; --sunken:#EEF1EB;
+    --ink:#14201B; --muted:#5C6B63;
+    --primary:#12A06A; --primary-press:#0C8757;
+    --energy:#FF7A4D; --cool:#4C8DF5; --indigo:#6C6CE0; --warn:#E0A82E; --danger:#D8503C;
+    --hairline:#E2E7DD;
+    --shadow:0 6px 22px rgba(20,32,27,.08);
+    --r-md:12px; --r-card:20px; --r-sheet:24px;
+    --font-display:'Sora',-apple-system,system-ui,sans-serif;
+    --font-body:'Plus Jakarta Sans',-apple-system,system-ui,sans-serif;
+    --stage-bg:#E7ECE4;
+  }
+  [data-theme="dark"]{
+    --canvas:#0E1512; --surface:#16201B; --sunken:#1E2A24;
+    --ink:#EAF1EC; --muted:#9DB0A6;
+    --primary:#2DBE83; --primary-press:#24A874;
+    --energy:#FF8C63; --cool:#6AA0F7; --indigo:#8A8AEC; --warn:#E8B94A; --danger:#E0654F;
+    --hairline:#26332C;
+    --shadow:none;
+    --stage-bg:#070B09;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; height:100%}
+  body{
+    font-family:var(--font-body); color:var(--ink);
+    background:var(--stage-bg);
+    display:flex; flex-direction:column; height:100dvh; overflow:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){*{transition:none!important; animation:none!important}}
+
+  /* ---------- Preview chrome ---------- */
+  .topbar{
+    flex:0 0 auto; height:46px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px; color:#fff; background:transparent;
+  }
+  [data-theme="dark"] .topbar{color:#eee}
+  .topbar .brand{font-family:var(--font-display); font-weight:600; font-size:14px; color:var(--ink); opacity:.85}
+  .topbar .hint{font-size:11px; color:var(--muted); margin-left:8px}
+  .toggle{
+    display:inline-flex; align-items:center; gap:7px; cursor:pointer; border:1px solid var(--hairline);
+    background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 12px; font-size:12px; font-weight:600;
+  }
+  .toggle svg{width:15px;height:15px}
+
+  .stage{flex:1 1 auto; display:flex; align-items:center; justify-content:center; min-height:0; padding:0}
+  @media (min-width:460px){ .stage{padding:18px} }
+
+  /* ---------- Device ---------- */
+  .device{
+    position:relative; width:min(390px,100%); height:100%;
+    background:var(--canvas); overflow:hidden; display:flex; flex-direction:column;
+  }
+  @media (min-width:460px){
+    .device{
+      max-width:390px; max-height:844px; border-radius:46px;
+      box-shadow:0 30px 70px rgba(0,0,0,.35), 0 0 0 11px #0b0d0c, 0 0 0 12px #1c1f1d;
+    }
+    .island{display:block}
+  }
+  .island{display:none; position:absolute; top:9px; left:50%; transform:translateX(-50%); width:108px; height:30px; background:#0b0d0c; border-radius:18px; z-index:60}
+
+  .statusbar{
+    flex:0 0 auto; height:46px; display:flex; align-items:flex-end; justify-content:space-between;
+    padding:0 22px 8px; font-family:var(--font-display); font-weight:600; font-size:14px; color:var(--ink);
+  }
+  .statusbar .right{display:flex; align-items:center; gap:6px}
+  .statusbar .right svg{width:17px;height:13px; color:var(--ink)}
+  .bat{width:24px;height:12px;border:1.4px solid var(--ink);border-radius:3px;position:relative;opacity:.9}
+  .bat::after{content:"";position:absolute;right:-3px;top:3px;width:2px;height:6px;background:var(--ink);border-radius:0 2px 2px 0}
+  .bat i{position:absolute;inset:1.5px;width:72%;background:var(--ink);border-radius:1px;display:block}
+
+  .app-body{flex:1 1 auto; min-height:0; position:relative; overflow:hidden}
+  .screen{position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; padding:6px 18px 96px; display:none; -webkit-overflow-scrolling:touch}
+  .screen.active{display:block; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+  .screen::-webkit-scrollbar{display:none}
+
+  /* ---------- Typography helpers ---------- */
+  .num{font-family:var(--font-display); font-feature-settings:"tnum" 1; font-variant-numeric:tabular-nums}
+  .title{font-family:var(--font-display); font-weight:600; font-size:22px; letter-spacing:-.01em; margin:0}
+  .eyebrow{font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+  .sub{color:var(--muted); font-size:13px}
+
+  /* ---------- Cards & rows ---------- */
+  .card{background:var(--surface); border:1px solid var(--hairline); border-radius:var(--r-card); padding:16px; box-shadow:var(--shadow); margin-bottom:14px}
+  .card.tight{padding:14px}
+  .h{font-weight:600; font-size:15px; margin:0}
+  .listrow{display:flex; align-items:center; gap:12px; padding:13px 2px; border-bottom:1px solid var(--hairline); cursor:pointer}
+  .listrow:last-child{border-bottom:none}
+  .listrow .ic{width:36px;height:36px;border-radius:10px;background:var(--sunken);display:grid;place-items:center;flex:0 0 auto;color:var(--ink)}
+  .listrow .lab{flex:1; font-weight:500; font-size:14.5px}
+  .listrow .val{color:var(--muted); font-size:13px}
+  .listrow svg{width:18px;height:18px}
+  .chev{color:var(--muted)}
+
+  .icbtn{width:34px;height:34px;border-radius:11px;background:var(--sunken);display:grid;place-items:center;border:none;color:var(--ink);cursor:pointer}
+  .icbtn svg{width:18px;height:18px}
+  svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+  /* ---------- Home header ---------- */
+  .hdr{display:flex; align-items:center; justify-content:space-between; padding:10px 2px 6px}
+  .hello{font-size:13px; color:var(--muted)}
+  .hello b{display:block; font-family:var(--font-display); font-weight:600; font-size:20px; color:var(--ink); margin-top:1px}
+  .streak{display:inline-flex;align-items:center;gap:6px;background:var(--sunken);border-radius:999px;padding:7px 12px;font-weight:700}
+  .streak .num{font-size:14px}
+  .streak svg{width:17px;height:17px;color:var(--energy)}
+
+  /* ---------- Ring ---------- */
+  .ringwrap{position:relative; display:grid; place-items:center; margin:6px 0 2px}
+  .ringwrap svg.ring{width:248px;height:248px;transform:rotate(-90deg)}
+  .ringwrap .track{stroke:var(--sunken)}
+  .ringwrap .arc{transition:stroke-dashoffset 1.15s cubic-bezier(.2,.85,.2,1); stroke-linecap:round}
+  .ring-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 44px}
+  .score{font-family:var(--font-display); font-weight:700; font-size:56px; line-height:1; letter-spacing:-.02em}
+  .score-sub{font-size:10.5px; font-weight:700; letter-spacing:.1em; color:var(--muted); margin-top:3px}
+  .coach{font-size:12.5px; line-height:1.35; color:var(--ink); margin-top:11px; max-width:165px}
+
+  .legend{display:flex; justify-content:center; gap:14px; margin:6px 0 14px; flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+  /* ---------- Stat grid ---------- */
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px}
+  .stat{background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:11px 8px; text-align:center; box-shadow:var(--shadow)}
+  .stat .si{width:18px;height:18px;margin:0 auto 5px}
+  .stat .n{font-family:var(--font-display); font-weight:600; font-size:16px; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:9.5px; color:var(--muted); margin-top:2px; letter-spacing:.02em}
+
+  /* ---------- AI card ---------- */
+  .ai .top{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .ai .badge-ai{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--primary)}
+  .ai .badge-ai .glow{width:8px;height:8px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 22%,transparent)}
+  .ai h4{margin:0 0 6px;font-family:var(--font-display);font-weight:600;font-size:16px}
+  .ai p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink)}
+  .ai .focus{margin-top:11px;padding-top:11px;border-top:1px solid var(--hairline);font-size:13px;color:var(--muted)}
+  .ai .focus b{color:var(--ink);font-weight:600}
+
+  /* ---------- Journal ---------- */
+  .daystrip{display:flex;align-items:center;justify-content:space-between;margin:8px 0 14px}
+  .totband{display:flex;gap:18px;background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:12px 16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .totband .t{flex:1}
+  .totband .t .k{font-family:var(--font-display);font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
+  .totband .t .k small{font-size:12px;color:var(--muted);font-weight:500}
+  .totband .t .l{font-size:11px;color:var(--muted);margin-top:2px}
+  .totband .bar{height:5px;background:var(--sunken);border-radius:999px;margin-top:7px;overflow:hidden}
+  .totband .bar i{display:block;height:100%;border-radius:999px}
+  .mealhead{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px}
+  .mealhead .h{display:flex;align-items:center;gap:8px}
+  .mealhead .kc{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .fitem{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--hairline);font-size:14px}
+  .fitem:last-of-type{border-bottom:none}
+  .fitem .nm{font-weight:500}
+  .fitem .sv{font-size:12px;color:var(--muted)}
+  .fitem .kc{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+  .addrow{display:flex;align-items:center;gap:7px;color:var(--primary);font-weight:600;font-size:13.5px;padding-top:11px;cursor:pointer}
+  .addrow svg{width:17px;height:17px}
+  .waterglasses{display:flex;gap:7px;margin-top:6px}
+  .glass{flex:1;height:30px;border-radius:8px;background:var(--sunken);border:1.5px solid var(--hairline)}
+  .glass.full{background:color-mix(in srgb,var(--cool) 22%,transparent);border-color:var(--cool)}
+
+  /* ---------- Insights ---------- */
+  .seg{display:inline-flex;background:var(--sunken);border-radius:999px;padding:3px;margin:8px 0 16px}
+  .seg button{border:none;background:transparent;color:var(--muted);font-family:var(--font-body);font-weight:600;font-size:12.5px;padding:7px 16px;border-radius:999px;cursor:pointer}
+  .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .metarow{display:flex;gap:10px;margin-bottom:14px}
+  .mini{flex:1;background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:13px;box-shadow:var(--shadow)}
+  .mini .n{font-family:var(--font-display);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums}
+  .mini .l{font-size:11px;color:var(--muted);margin-top:3px}
+  .chartcard .h{margin-bottom:12px}
+  .chart{width:100%;height:auto;display:block}
+  .barlabels{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted);padding:0 4px}
+  .upsell{background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 14%,var(--surface)),var(--surface));border:1px solid var(--hairline)}
+  .upsell .h{display:flex;align-items:center;gap:8px}
+  .upsell svg{width:20px;height:20px;color:var(--primary)}
+
+  /* ---------- Profile ---------- */
+  .phead{display:flex;align-items:center;gap:14px;margin:14px 2px 18px}
+  .avatar{width:58px;height:58px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:22px}
+  .phead .nm{font-family:var(--font-display);font-weight:600;font-size:20px}
+  .plan-badge{display:inline-flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--primary) 16%,transparent);color:var(--primary);font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;margin-top:5px}
+  .metrics3{display:flex;gap:10px;margin-bottom:6px}
+  .metrics3 .m{flex:1;text-align:center}
+  .metrics3 .m .n{font-family:var(--font-display);font-weight:600;font-size:19px}
+  .metrics3 .m .l{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .metrics3 .m .tag{font-size:10px;color:var(--primary);font-weight:700}
+  .disc{font-size:11px;color:var(--muted);text-align:center;line-height:1.5;margin:10px 6px 4px}
+
+  /* ---------- Buttons ---------- */
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:none;border-radius:14px;padding:15px;font-family:var(--font-body);font-weight:700;font-size:15px;cursor:pointer}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:active{background:var(--primary-press)}
+  .btn-ghost{background:transparent;color:var(--danger);font-weight:600}
+  .btn-soft{background:var(--sunken);color:var(--ink);font-weight:600}
+
+  /* ---------- Tab bar ---------- */
+  .tabbar{flex:0 0 auto; position:relative; display:flex; align-items:center; justify-content:space-around;
+    padding:9px 8px calc(8px + env(safe-area-inset-bottom)); background:color-mix(in srgb,var(--surface) 94%,transparent);
+    border-top:1px solid var(--hairline); backdrop-filter:saturate(180%) blur(12px)}
+  .tab{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; color:var(--muted); cursor:pointer; padding:4px 0}
+  .tab svg{width:23px;height:23px}
+  .tab .tl{font-size:10px; font-weight:600}
+  .tab.on{color:var(--primary)}
+  .fabwrap{flex:0 0 auto; width:64px; display:flex; justify-content:center}
+  .fab{width:54px;height:54px;border-radius:50%;background:var(--primary);color:#fff;border:none;display:grid;place-items:center;margin-top:-26px;box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 45%,transparent);cursor:pointer}
+  .fab svg{width:26px;height:26px;stroke-width:2.2}
+  .fab:active{background:var(--primary-press)}
+
+  /* ---------- Overlays ---------- */
+  .backdrop{position:absolute; inset:0; background:rgba(8,12,10,.42); opacity:0; visibility:hidden; transition:opacity .25s; z-index:80}
+  .backdrop.open{opacity:1; visibility:visible}
+  .sheet{position:absolute; left:0; right:0; bottom:0; background:var(--surface); border-radius:var(--r-sheet) var(--r-sheet) 0 0; padding:10px 18px calc(22px + env(safe-area-inset-bottom)); transform:translateY(110%); transition:transform .3s cubic-bezier(.2,.85,.2,1); z-index:90}
+  .sheet.open{transform:none}
+  .grabber{width:38px;height:4px;border-radius:999px;background:var(--hairline);margin:4px auto 14px}
+  .sheet h3{font-family:var(--font-display);font-weight:600;font-size:17px;margin:0 2px 14px}
+  .qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .qitem{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--sunken);border-radius:16px;padding:16px 8px;cursor:pointer;border:1px solid transparent}
+  .qitem:active{border-color:var(--primary)}
+  .qitem .qic{width:42px;height:42px;border-radius:12px;background:var(--surface);display:grid;place-items:center}
+  .qitem .qic svg{width:22px;height:22px}
+  .qitem span{font-size:12px;font-weight:600}
+
+  /* paywall */
+  .paywall{max-height:90%; overflow-y:auto}
+  .pw-x{position:absolute; right:16px; top:16px; width:32px;height:32px;border-radius:50%;background:var(--sunken);border:none;display:grid;place-items:center;color:var(--ink);cursor:pointer}
+  .pw-x svg{width:17px;height:17px}
+  .pw-toggle{display:inline-flex;background:var(--sunken);border-radius:999px;padding:3px;margin:2px 0 16px}
+  .pw-toggle button{border:none;background:transparent;color:var(--muted);font-weight:700;font-size:12px;padding:7px 14px;border-radius:999px;cursor:pointer}
+  .pw-toggle button.on{background:var(--surface);color:var(--ink)}
+  .plan{border:1.5px solid var(--hairline);border-radius:18px;padding:15px;margin-bottom:12px;position:relative;cursor:pointer}
+  .plan.featured{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 6%,var(--surface))}
+  .plan .pl-top{display:flex;align-items:baseline;justify-content:space-between}
+  .plan .pl-name{font-family:var(--font-display);font-weight:600;font-size:16px}
+  .plan .pl-price{font-family:var(--font-display);font-weight:700;font-size:18px}
+  .plan .pl-price small{font-size:12px;color:var(--muted);font-weight:500}
+  .plan .pl-feat{margin:9px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+  .plan .pl-feat li{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--ink)}
+  .plan .pl-feat svg{width:15px;height:15px;color:var(--primary);flex:0 0 auto;margin-top:1px}
+  .ribbon{position:absolute;top:-9px;right:14px;background:var(--primary);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+  .pw-note{text-align:center;font-size:11px;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.2V20a1 1 0 0 0 1 1H10v-6h4v6h3.5a1 1 0 0 0 1-1V9.2"/></symbol>
+  <symbol id="book" viewBox="0 0 24 24"><path d="M12 6c-1.6-1.2-3.7-2-6.2-2H3v15h3c2.4 0 4.4.7 6 2"/><path d="M12 6c1.6-1.2 3.7-2 6.2-2H21v15h-3c-2.4 0-4.4.7-6 2z"/></symbol>
+  <symbol id="chart" viewBox="0 0 24 24"><path d="M4 20h16"/><rect x="5.5" y="12" width="3.5" height="6" rx="1.2"/><rect x="10.5" y="7" width="3.5" height="11" rx="1.2"/><rect x="15.5" y="10" width="3.5" height="8" rx="1.2"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="flame" viewBox="0 0 24 24"><path d="M12 2.5c2.4 3.2-.8 5 1.2 7.4.7-.6.9-1.6.9-1.6 1.3 1.4 2 2.9 2 4.5a4.6 4.6 0 1 1-9.2 0c0-3.1 2.4-4.4 3.3-7 .5-1.4.4-2.4-.2-3.7z"/></symbol>
+  <symbol id="drop" viewBox="0 0 24 24"><path d="M12 3.2s6 5.7 6 10.1a6 6 0 1 1-12 0C6 8.9 12 3.2 12 3.2z"/></symbol>
+  <symbol id="zap" viewBox="0 0 24 24"><path d="M13 3 5 13.5h5.2L9 21l8-10.6h-5.2z"/></symbol>
+  <symbol id="steps" viewBox="0 0 24 24"><path d="M3 12.5h3.5l2.2-7.5 4.6 14 2.2-6.5H21"/></symbol>
+  <symbol id="moon" viewBox="0 0 24 24"><path d="M20 13.5A8 8 0 1 1 10.4 4 6.5 6.5 0 0 0 20 13.5z"/></symbol>
+  <symbol id="dumbbell" viewBox="0 0 24 24"><rect x="2.5" y="9" width="3" height="6" rx="1.2"/><rect x="18.5" y="9" width="3" height="6" rx="1.2"/><line x1="5.5" y1="12" x2="18.5" y2="12"/></symbol>
+  <symbol id="utensils" viewBox="0 0 24 24"><path d="M6 3v6a2 2 0 0 0 4 0V3"/><line x1="8" y1="9" x2="8" y2="21"/><path d="M16.5 3c-1.6 0-2.6 2.8-2.6 6s1 4 2.6 4v8"/></symbol>
+  <symbol id="smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.2a4.4 4.4 0 0 0 7 0"/><circle cx="9.2" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="14.8" cy="10" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="thermo" viewBox="0 0 24 24"><path d="M12 13.6V5a2 2 0 0 0-4 0v8.6a4 4 0 1 0 4 0z"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-3 7.7-7 9-4-1.3-7-4.4-7-9V6z"/></symbol>
+  <symbol id="spark" viewBox="0 0 24 24"><path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4z"/></symbol>
+  <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.3-7-9.3A3.7 3.7 0 0 1 12 7a3.7 3.7 0 0 1 7 3.7C19 15.7 12 20 12 20z"/></symbol>
+  <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6" r="2.4"/><circle cx="17" cy="18" r="2.4"/><line x1="8.1" y1="11" x2="14.9" y2="7"/><line x1="8.1" y1="13" x2="14.9" y2="17"/></symbol>
+  <symbol id="signal" viewBox="0 0 24 18"><rect x="1" y="12" width="3.5" height="5" rx="1"/><rect x="6.5" y="8" width="3.5" height="9" rx="1"/><rect x="12" y="4" width="3.5" height="13" rx="1"/><rect x="17.5" y="1" width="3.5" height="16" rx="1" opacity=".4"/></symbol>
+  <symbol id="wifi" viewBox="0 0 24 18"><path d="M2 6.5a14 14 0 0 1 20 0" fill="none"/><path d="M5 10a9 9 0 0 1 14 0" fill="none"/><path d="M8.2 13.4a4.5 4.5 0 0 1 7.6 0" fill="none"/><circle cx="12" cy="16.5" r="1.1" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<!-- preview top bar -->
+<div class="topbar">
+  <div style="display:flex;align-items:baseline">
+    <span class="brand">Saathi</span><span class="hint">UI preview — tap tabs &amp; +</span>
+  </div>
+  <button class="toggle" id="themeBtn"><svg class="i" style="stroke-width:2"><use href="#moon"/></svg><span id="themeLbl">Dark</span></button>
+</div>
+
+<div class="stage">
+  <div class="device">
+    <div class="island"></div>
+
+    <!-- status bar -->
+    <div class="statusbar">
+      <span id="clock">9:41</span>
+      <span class="right">
+        <svg viewBox="0 0 24 18" style="width:17px;height:13px;fill:currentColor;stroke:none"><use href="#signal"/></svg>
+        <svg viewBox="0 0 24 18" style="width:17px;height:13px;stroke:currentColor;fill:none;stroke-width:1.6"><use href="#wifi"/></svg>
+        <span class="bat"><i></i></span>
+      </span>
+    </div>
+
+    <div class="app-body">
+
+      <!-- ============ HOME ============ -->
+      <section class="screen active" id="screen-home">
+        <div class="hdr">
+          <div class="hello">Good evening<b>Aarav 👋</b></div>
+          <div class="streak"><svg class="i"><use href="#flame"/></svg><span class="num">7</span></div>
+        </div>
+
+        <div class="ringwrap">
+          <svg class="ring" viewBox="0 0 248 248">
+            <!-- tracks -->
+            <circle class="track" cx="124" cy="124" r="100" fill="none" stroke-width="11"/>
+            <circle class="track" cx="124" cy="124" r="82"  fill="none" stroke-width="11"/>
+            <circle class="track" cx="124" cy="124" r="64"  fill="none" stroke-width="11"/>
+            <circle class="track" cx="124" cy="124" r="46"  fill="none" stroke-width="11"/>
+            <!-- arcs (offsets set by JS) -->
+            <circle class="arc" id="arc-cal"  cx="124" cy="124" r="100" fill="none" stroke="var(--energy)"  stroke-width="11"/>
+            <circle class="arc" id="arc-move" cx="124" cy="124" r="82"  fill="none" stroke="var(--primary)" stroke-width="11"/>
+            <circle class="arc" id="arc-water" cx="124" cy="124" r="64"  fill="none" stroke="var(--cool)"    stroke-width="11"/>
+            <circle class="arc" id="arc-sleep" cx="124" cy="124" r="46"  fill="none" stroke="var(--indigo)"  stroke-width="11"/>
+          </svg>
+          <div class="ring-center">
+            <div class="score num">72</div>
+            <div class="score-sub">OF 100 TODAY</div>
+            <div class="coach">Strong protein day — just nudge water tonight.</div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><i class="dot" style="background:var(--energy)"></i>Fuel</span>
+          <span><i class="dot" style="background:var(--primary)"></i>Move</span>
+          <span><i class="dot" style="background:var(--cool)"></i>Water</span>
+          <span><i class="dot" style="background:var(--indigo)"></i>Sleep</span>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><svg class="i si" style="color:var(--energy)"><use href="#flame"/></svg><div class="n">480</div><div class="l">kcal left</div></div>
+          <div class="stat"><svg class="i si" style="color:var(--primary)"><use href="#zap"/></svg><div class="n">62g</div><div class="l">protein</div></div>
+          <div class="stat"><svg class="i si" style="color:var(--cool)"><use href="#drop"/></svg><div class="n">1.2L</div><div class="l">water</div></div>
+          <div class="stat"><svg class="i si" style="color:var(--ink)"><use href="#steps"/></svg><div class="n">6.2k</div><div class="l">steps</div></div>
+        </div>
+
+        <div class="card ai">
+          <div class="top"><span class="badge-ai"><span class="glow"></span>AI Coach</span></div>
+          <h4>You're on track for your goal</h4>
+          <p>You hit your steps and protein today, but dinner ran heavy on carbs and your water is low. Nothing major — a glass or two before bed closes the gap.</p>
+          <div class="focus"><b>Tomorrow:</b> a 20-minute walk after lunch, and start the day with water.</div>
+        </div>
+      </section>
+
+      <!-- ============ JOURNAL ============ -->
+      <section class="screen" id="screen-journal">
+        <div class="daystrip">
+          <h2 class="title">Today</h2>
+          <button class="icbtn"><svg class="i"><use href="#chev"/></svg></button>
+        </div>
+
+        <div class="totband">
+          <div class="t">
+            <div class="k num">1,420<small> / 1,900</small></div>
+            <div class="l">Calories</div>
+            <div class="bar"><i style="width:75%;background:var(--energy)"></i></div>
+          </div>
+          <div class="t">
+            <div class="k num">62g<small> / 95g</small></div>
+            <div class="l">Protein</div>
+            <div class="bar"><i style="width:65%;background:var(--primary)"></i></div>
+          </div>
+        </div>
+
+        <div class="card tight">
+          <div class="mealhead"><div class="h"><svg class="i" style="color:var(--energy)"><use href="#utensils"/></svg>Breakfast</div><span class="kc">340 kcal</span></div>
+          <div class="fitem"><div><div class="nm">Poha</div><div class="sv">1 katori</div></div><span class="kc">250</span></div>
+          <div class="fitem"><div><div class="nm">Masala chai</div><div class="sv">1 cup</div></div><span class="kc">90</span></div>
+          <div class="addrow"><svg class="i"><use href="#plus"/></svg>Add food</div>
+        </div>
+
+        <div class="card tight">
+          <div class="mealhead"><div class="h"><svg class="i" style="color:var(--energy)"><use href="#utensils"/></svg>Lunch</div><span class="kc">620 kcal</span></div>
+          <div class="fitem"><div><div class="nm">Roti</div><div class="sv">2 pieces</div></div><span class="kc">200</span></div>
+          <div class="fitem"><div><div class="nm">Dal tadka</div><div class="sv">1 katori</div></div><span class="kc">180</span></div>
+          <div class="fitem"><div><div class="nm">Bhindi sabzi</div><div class="sv">1 katori</div></div><span class="kc">150</span></div>
+          <div class="fitem"><div><div class="nm">Curd</div><div class="sv">1 katori</div></div><span class="kc">90</span></div>
+          <div class="addrow"><svg class="i"><use href="#plus"/></svg>Add food</div>
+        </div>
+
+        <div class="card tight">
+          <div class="mealhead"><div class="h"><svg class="i" style="color:var(--energy)"><use href="#utensils"/></svg>Dinner</div><span class="kc">0 kcal</span></div>
+          <div class="addrow"><svg class="i"><use href="#plus"/></svg>Add food</div>
+        </div>
+
+        <div class="card tight">
+          <div class="mealhead"><div class="h"><svg class="i" style="color:var(--cool)"><use href="#drop"/></svg>Water</div><span class="kc">1.2 / 3.0 L</span></div>
+          <div class="waterglasses">
+            <div class="glass full"></div><div class="glass full"></div><div class="glass full"></div>
+            <div class="glass full"></div><div class="glass"></div><div class="glass"></div>
+            <div class="glass"></div><div class="glass"></div>
+          </div>
+        </div>
+
+        <div class="card tight">
+          <div class="mealhead"><div class="h"><svg class="i" style="color:var(--indigo)"><use href="#moon"/></svg>Sleep</div><span class="kc">7h 20m · 7/10</span></div>
+        </div>
+
+        <div class="card tight">
+          <div class="mealhead"><div class="h"><svg class="i" style="color:var(--primary)"><use href="#dumbbell"/></svg>Workout</div><span class="kc">Yoga · 30 min</span></div>
+        </div>
+
+        <div class="card tight" style="margin-bottom:0">
+          <div class="mealhead" style="margin:0"><div class="h"><svg class="i" style="color:var(--warn)"><use href="#smile"/></svg>Mood</div><span class="kc">Normal · energy 6 · stress 4</span></div>
+        </div>
+      </section>
+
+      <!-- ============ INSIGHTS ============ -->
+      <section class="screen" id="screen-insights">
+        <h2 class="title" style="margin:10px 2px 0">Insights</h2>
+        <div class="seg">
+          <button class="on">Week</button><button>Month</button><button>3M</button>
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div><div class="eyebrow">This week</div><div class="num" style="font-size:34px;font-weight:700;line-height:1.1;margin-top:4px">76<span style="font-size:15px;color:var(--muted);font-weight:600"> / 100</span></div></div>
+            <div style="text-align:right" class="sub">avg health<br>score</div>
+          </div>
+        </div>
+
+        <div class="metarow">
+          <div class="mini"><div class="n num">7,100</div><div class="l">avg steps</div></div>
+          <div class="mini"><div class="n num">7.0h</div><div class="l">avg sleep</div></div>
+          <div class="mini"><div class="n num">2.1L</div><div class="l">avg water</div></div>
+        </div>
+
+        <div class="card chartcard">
+          <div class="h">Weight trend</div>
+          <svg class="chart" viewBox="0 0 300 130" preserveAspectRatio="none">
+            <line x1="0" y1="110" x2="300" y2="110" stroke="var(--hairline)" stroke-width="1"/>
+            <line x1="0" y1="60" x2="300" y2="60" stroke="var(--hairline)" stroke-width="1" stroke-dasharray="3 5"/>
+            <polyline points="10,40 58,48 106,46 154,58 202,66 250,78 290,84" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="290" cy="84" r="4.5" fill="var(--primary)"/>
+          </svg>
+          <div class="sub" style="margin-top:8px">78.4 kg → <b style="color:var(--ink)">77.1 kg</b> · down 1.3 kg this month</div>
+        </div>
+
+        <div class="card chartcard">
+          <div class="h">Steps this week</div>
+          <svg class="chart" viewBox="0 0 300 120" preserveAspectRatio="none">
+            <g fill="var(--cool)">
+              <rect x="8"   y="36"  width="30" height="74" rx="6"/>
+              <rect x="50"  y="58"  width="30" height="52" rx="6"/>
+              <rect x="92"  y="22"  width="30" height="88" rx="6"/>
+              <rect x="134" y="70"  width="30" height="40" rx="6"/>
+              <rect x="176" y="48"  width="30" height="62" rx="6"/>
+              <rect x="218" y="10"  width="30" height="100" rx="6" fill="var(--primary)"/>
+              <rect x="260" y="54"  width="30" height="56" rx="6"/>
+            </g>
+          </svg>
+          <div class="barlabels"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+        </div>
+
+        <div class="card upsell" onclick="openPaywall()">
+          <div class="h"><svg class="i"><use href="#spark"/></svg>Track your family together</div>
+          <p class="sub" style="margin:8px 0 12px">Add up to 5 members, see everyone's day on one dashboard, and get health alerts. One plan — ₹299/mo.</p>
+          <button class="btn btn-soft" style="padding:11px">See Family plan</button>
+        </div>
+      </section>
+
+      <!-- ============ PROFILE ============ -->
+      <section class="screen" id="screen-profile">
+        <div class="phead">
+          <div class="avatar">AS</div>
+          <div>
+            <div class="nm">Aarav Sharma</div>
+            <span class="plan-badge"><svg class="i" style="width:13px;height:13px"><use href="#spark"/></svg>Pro member</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="metrics3">
+            <div class="m"><div class="n num">23.4</div><div class="l">BMI</div><div class="tag">Normal</div></div>
+            <div class="m"><div class="n num">77.1</div><div class="l">weight kg</div><div class="tag">→ 72 goal</div></div>
+            <div class="m"><div class="n num">2,180</div><div class="l">TDEE</div><div class="tag">kcal/day</div></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:6px 16px">
+          <div class="listrow"><div class="ic"><svg class="i"><use href="#heart"/></svg></div><div class="lab">Health profile</div><span class="val">80%</span><svg class="i chev"><use href="#chev"/></svg></div>
+          <div class="listrow"><div class="ic"><svg class="i"><use href="#bell"/></svg></div><div class="lab">Reminders</div><span class="val">3 on</span><svg class="i chev"><use href="#chev"/></svg></div>
+          <div class="listrow" onclick="openPaywall()"><div class="ic"><svg class="i"><use href="#spark"/></svg></div><div class="lab">Subscription</div><span class="val">Pro</span><svg class="i chev"><use href="#chev"/></svg></div>
+          <div class="listrow"><div class="ic"><svg class="i"><use href="#shield"/></svg></div><div class="lab">Privacy &amp; data</div><svg class="i chev"><use href="#chev"/></svg></div>
+          <div class="listrow"><div class="ic"><svg class="i"><use href="#user"/></svg></div><div class="lab">About Saathi</div><svg class="i chev"><use href="#chev"/></svg></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="openPaywall()"><svg class="i" style="stroke:#fff"><use href="#spark"/></svg>Upgrade to Family</button>
+        <button class="btn btn-ghost" style="margin-top:6px">Sign out</button>
+        <p class="disc">Saathi is a wellness &amp; habit-tracking app — not a medical device, and not a substitute for professional medical advice.</p>
+      </section>
+
+    </div><!-- /app-body -->
+
+    <!-- tab bar -->
+    <nav class="tabbar">
+      <button class="tab on" data-target="screen-home"><svg class="i"><use href="#home"/></svg><span class="tl">Home</span></button>
+      <button class="tab" data-target="screen-journal"><svg class="i"><use href="#book"/></svg><span class="tl">Journal</span></button>
+      <div class="fabwrap"><button class="fab" id="fabBtn" aria-label="Quick log"><svg class="i" style="stroke:#fff"><use href="#plus"/></svg></button></div>
+      <button class="tab" data-target="screen-insights"><svg class="i"><use href="#chart"/></svg><span class="tl">Insights</span></button>
+      <button class="tab" data-target="screen-profile"><svg class="i"><use href="#user"/></svg><span class="tl">Profile</span></button>
+    </nav>
+
+    <!-- overlays -->
+    <div class="backdrop" id="backdrop"></div>
+
+    <div class="sheet" id="logSheet">
+      <div class="grabber"></div>
+      <h3>Log something</h3>
+      <div class="qgrid">
+        <div class="qitem" onclick="closeAll()"><div class="qic"><svg class="i" style="color:var(--energy)"><use href="#utensils"/></svg></div><span>Food</span></div>
+        <div class="qitem" onclick="closeAll()"><div class="qic"><svg class="i" style="color:var(--cool)"><use href="#drop"/></svg></div><span>Water</span></div>
+        <div class="qitem" onclick="closeAll()"><div class="qic"><svg class="i" style="color:var(--indigo)"><use href="#moon"/></svg></div><span>Sleep</span></div>
+        <div class="qitem" onclick="closeAll()"><div class="qic"><svg class="i" style="color:var(--primary)"><use href="#dumbbell"/></svg></div><span>Workout</span></div>
+        <div class="qitem" onclick="closeAll()"><div class="qic"><svg class="i" style="color:var(--warn)"><use href="#smile"/></svg></div><span>Mood</span></div>
+        <div class="qitem" onclick="closeAll()"><div class="qic"><svg class="i" style="color:var(--danger)"><use href="#thermo"/></svg></div><span>Symptom</span></div>
+      </div>
+    </div>
+
+    <div class="sheet paywall" id="paySheet">
+      <button class="pw-x" onclick="closeAll()"><svg class="i"><use href="#x"/></svg></button>
+      <div class="grabber"></div>
+      <h3 style="margin-bottom:4px">Choose your plan</h3>
+      <p class="sub" style="margin:0 2px 12px">Unlock your AI coach, reports &amp; goals.</p>
+      <div class="pw-toggle"><button class="on">Monthly</button><button>Yearly · save 33%</button></div>
+
+      <div class="plan featured">
+        <div class="ribbon">Most popular</div>
+        <div class="pl-top"><span class="pl-name">Pro</span><span class="pl-price">₹99<small>/mo</small></span></div>
+        <ul class="pl-feat">
+          <li><svg class="i"><use href="#check"/></svg>Daily AI analysis &amp; coaching</li>
+          <li><svg class="i"><use href="#check"/></svg>Weekly &amp; monthly reports (PDF)</li>
+          <li><svg class="i"><use href="#check"/></svg>Monthly goal generator</li>
+        </ul>
+      </div>
+
+      <div class="plan">
+        <div class="pl-top"><span class="pl-name">Family</span><span class="pl-price">₹299<small>/mo</small></span></div>
+        <ul class="pl-feat">
+          <li><svg class="i"><use href="#check"/></svg>Everything in Pro, up to 5 members</li>
+          <li><svg class="i"><use href="#check"/></svg>Family dashboard &amp; health alerts</li>
+        </ul>
+      </div>
+
+      <div class="plan">
+        <div class="pl-top"><span class="pl-name">Advanced</span><span class="pl-price">₹599<small>/mo</small></span></div>
+        <ul class="pl-feat">
+          <li><svg class="i"><use href="#check"/></svg>Food photo &amp; blood report analysis</li>
+          <li><svg class="i"><use href="#check"/></svg>Smartwatch sync &amp; advanced analytics</li>
+        </ul>
+      </div>
+
+      <button class="btn btn-primary" onclick="closeAll()">Start Pro — ₹99/mo</button>
+      <p class="pw-note">Cancel anytime · billed through the app store</p>
+    </div>
+
+  </div><!-- /device -->
+</div><!-- /stage -->
+
+<script>
+  // tabs
+  const tabs = document.querySelectorAll('.tab');
+  const screens = document.querySelectorAll('.screen');
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    const id = t.dataset.target;
+    tabs.forEach(x=>x.classList.toggle('on', x===t));
+    screens.forEach(s=>{ const on=s.id===id; s.classList.toggle('active',on); if(on) s.scrollTop=0; });
+  }));
+
+  // overlays
+  const backdrop=document.getElementById('backdrop');
+  const logSheet=document.getElementById('logSheet');
+  const paySheet=document.getElementById('paySheet');
+  function openSheet(el){ backdrop.classList.add('open'); el.classList.add('open'); }
+  function closeAll(){ backdrop.classList.remove('open'); logSheet.classList.remove('open'); paySheet.classList.remove('open'); }
+  function openPaywall(){ closeAll(); openSheet(paySheet); }
+  document.getElementById('fabBtn').addEventListener('click',()=>openSheet(logSheet));
+  backdrop.addEventListener('click',closeAll);
+
+  // theme
+  const themeBtn=document.getElementById('themeBtn'), themeLbl=document.getElementById('themeLbl');
+  themeBtn.addEventListener('click',()=>{
+    const dark=document.body.getAttribute('data-theme')==='dark';
+    document.body.setAttribute('data-theme', dark?'light':'dark');
+    themeLbl.textContent = dark?'Dark':'Light';
+    themeBtn.querySelector('use').setAttribute('href', dark?'#moon':'#sun');
+  });
+
+  // clock
+  function tick(){ const d=new Date(); let h=d.getHours(), m=d.getMinutes().toString().padStart(2,'0');
+    document.getElementById('clock').textContent = (h%12||12)+':'+m; }
+  tick(); setInterval(tick,15000);
+
+  // Today Ring fill animation
+  const ring = [
+    ['arc-cal',100,0.75],
+    ['arc-move',82,0.55],
+    ['arc-water',64,0.40],
+    ['arc-sleep',46,0.85],
+  ];
+  ring.forEach(([id,r])=>{ const c=2*Math.PI*r, el=document.getElementById(id);
+    el.style.strokeDasharray=c; el.style.strokeDashoffset=c; });
+  window.addEventListener('load',()=>{ setTimeout(()=>{
+    ring.forEach(([id,r,p])=>{ const c=2*Math.PI*r;
+      document.getElementById(id).style.strokeDashoffset = c*(1-p); });
+  },180); });
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Saathi color tokens — FRONTEND_DESIGN.md §2 (RGB triplets for Tailwind's
+   `rgb(var(...) / <alpha-value>)` opacity syntax). */
+@layer base {
+  :root {
+    --color-canvas: 246 248 244;
+    --color-surface: 255 255 255;
+    --color-surface-sunken: 238 241 235;
+    --color-ink: 20 32 27;
+    --color-ink-muted: 92 107 99;
+    --color-primary: 18 160 106;
+    --color-primary-press: 12 135 87;
+    --color-energy: 255 122 77;
+    --color-cool: 76 141 245;
+    --color-indigo: 108 108 224;
+    --color-warn: 224 168 46;
+    --color-danger: 216 80 60;
+    --color-hairline: 226 231 221;
+  }
+
+  .dark:root {
+    --color-canvas: 14 21 18;
+    --color-surface: 22 32 27;
+    --color-surface-sunken: 30 42 36;
+    --color-ink: 234 241 236;
+    --color-ink-muted: 157 176 166;
+    --color-primary: 45 190 131;
+    --color-primary-press: 36 168 116;
+    --color-energy: 255 140 99;
+    --color-cool: 106 160 247;
+    --color-indigo: 138 138 236;
+    --color-warn: 232 185 74;
+    --color-danger: 224 101 79;
+    --color-hairline: 38 51 44;
+  }
+}
