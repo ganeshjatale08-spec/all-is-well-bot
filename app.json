@@ -36,7 +36,16 @@
           "image": "./assets/icon.png",
           "imageWidth": 140
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#12A06A",
+          "sounds": []
+        }
+      ],
+      "react-native-purchases"
     ],
     "experiments": {
       "typedRoutes": true

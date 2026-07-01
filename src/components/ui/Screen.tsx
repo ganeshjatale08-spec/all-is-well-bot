@@ -2,6 +2,8 @@ import { type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { OfflineBanner } from './OfflineBanner';
+
 type ScreenProps = {
   children: ReactNode;
   scroll?: boolean;
@@ -17,6 +19,7 @@ export function Screen({ children, scroll = false, className = '' }: ScreenProps
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={['top', 'bottom']}>
+      <OfflineBanner />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

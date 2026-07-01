@@ -43,15 +43,30 @@ export function AiInsightCard() {
     );
   }
 
+  // AI/API failure: deterministic fallback, never an error wall (APP_FLOW §9).
+  if (generate.isError) {
+    return (
+      <Card className="gap-2">
+        <View className="flex-row items-center gap-2">
+          <Sparkles size={18} color={tokens.inkMuted} strokeWidth={2} />
+          <Text className="font-body-semibold text-base text-ink">Keep going today</Text>
+        </View>
+        <Text className="font-body text-sm text-ink-muted">
+          Your coach will have fresh insights once your data syncs. Logging consistently is the best thing you can do.
+        </Text>
+      </Card>
+    );
+  }
+
   if (!analysis) {
     return (
       <Card className="items-center gap-2 py-6">
         <Sparkles size={24} color={tokens.primary} strokeWidth={1.5} />
         <Text className="text-center font-body-semibold text-base text-ink">
-          Today&apos;s insight isn&apos;t ready yet
+          Your coach is reviewing last night&apos;s data
         </Text>
         <Text className="text-center font-body text-sm text-ink-muted">
-          It&apos;s usually ready by morning. You can also generate it now.
+          Insights are usually ready by morning. You can also generate one now.
         </Text>
         <View className="mt-2">
           <Button

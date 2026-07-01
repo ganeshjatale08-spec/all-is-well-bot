@@ -159,6 +159,19 @@ export default function Home() {
           <Stat value={dailyLog?.steps ?? 0} label="Steps" />
         </View>
 
+        {/* First-log prompt (APP_FLOW §9: "Start with a glass of water → quick log") */}
+        {!hasLoggedToday ? (
+          <View
+            className="rounded-xl border border-hairline bg-surface px-4 py-5"
+            accessibilityRole="text"
+          >
+            <Text className="font-body-semibold text-base text-ink">No logs yet today</Text>
+            <Text className="mt-1 font-body text-sm text-ink-muted">
+              Start with a glass of water — every entry fills the ring.
+            </Text>
+          </View>
+        ) : null}
+
         <AiInsightCard />
       </View>
     </Screen>

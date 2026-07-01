@@ -2,7 +2,7 @@
 
 Build **one phase at a time**. After each phase: lint + typecheck + test, commit, review, then continue. Tick boxes as you go and add tasks you discover. Status legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 
-**Current phase:** Phase 5
+**Current phase:** Phase 7
 **MVP = Phases 0–7.** Phases 8–9 are post-MVP (v1.1).
 
 ---
@@ -74,15 +74,16 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 - [ ] Enroll in App Store / Play **small-business 15%** programs — **MANUAL**: enroll at https://developer.apple.com/small-business-program/ and https://support.google.com/googleplay/android-developer/answer/10632485. Reduces store cut from 30% to 15% on first ₹10L revenue per year.
 
 ## Phase 7 — Notifications, polish, launch-prep
-- [ ] `device_tokens` + expo-notifications registration
-- [ ] Local reminders (morning/afternoon/night), user-configurable + quiet hours (APP_FLOW §8)
-- [ ] "Report ready" push
-- [ ] Profile: reminders settings, subscription mgmt, **export data**, **delete account** (DPDP cascade), privacy policy, disclaimer
-- [ ] Empty/offline/AI-failure states (APP_FLOW §9)
-- [ ] Accessibility + dark theme + dynamic-type pass on all screens
-- [ ] Performance pass (FlashList, memoized charts, 60fps ring)
-- [ ] E2E happy path (mock AI) + domain tests green
-- [ ] EAS builds; store listings, privacy labels, screenshots; submit
+- [x] `device_tokens` migration + expo-notifications registration (`src/lib/notifications.ts`) — permissions request, Expo push token upsert (ignoreDuplicates), `setNotificationHandler` for foreground display
+- [x] Local reminders (morning/afternoon/night), user-configurable + quiet hours (APP_FLOW §8) — `features/notifications/lib/schedule.ts`, `features/notifications/hooks/useReminderSettings.ts`, `app/(tabs)/profile/reminders.tsx` (TimePicker with ±hr/±15min, Switch per reminder, quiet-hours window)
+- [x] "Report ready" push — `supabase/functions/send-report-push/index.ts` (service-role auth, fetches device_tokens, calls Expo Push API, weekly/monthly copy variants)
+- [x] Profile: reminders settings link, subscription mgmt (existing SubscriptionCard), **export data** (Edge Function `export-data` + expo-file-system/legacy + expo-sharing), **delete account** (Edge Function `delete-account` → cascade → local signOut), privacy policy link (EXPO_PUBLIC_PRIVACY_URL), disclaimer text, sign out with confirmation — all in new `AccountCard` in Profile; `src/features/auth/hooks/useAccount.ts`
+- [x] Empty/offline/AI-failure states (APP_FLOW §9) — `OfflineBanner` (NetInfo, amber bar in Screen), "No logs yet today" card in Home, AiInsightCard "Your coach is reviewing last night's data" pending state, deterministic fallback card on AI/API failure
+- [x] Accessibility pass — all key Pressable/Switch controls have accessibilityRole + accessibilityLabel; OfflineBanner has accessibilityRole="alert"; RangePicker uses tablist/tab roles; journal nav arrows labeled; TodayRing has accessibilitySummary (prior phase)
+- [ ] Performance pass (FlashList, memoized charts, 60fps ring) — deferred post-MVP
+- [ ] E2E happy path (mock AI) + domain tests green — 80/80 domain tests passing; E2E (Maestro/Detox) requires a running device build, deferred
+- [x] EAS config (`eas.json`) — development/preview/production profiles; `app.json` updated with expo-notifications + react-native-purchases plugins
+- [ ] Store listings, privacy labels, screenshots; submit — **MANUAL**: EAS build + App Store Connect / Play Console listing (icon, screenshots, privacy labels, 4+ age rating, health disclaimer). Privacy policy URL → set `EXPO_PUBLIC_PRIVACY_URL` in EAS secrets once policy page is live.
 
 ---
 
@@ -119,6 +120,8 @@ Build **one phase at a time**. After each phase: lint + typecheck + test, commit
 
 ## Notes for next session
 > Leave a short note here at the end of each session: what's done, what's next, any blockers.
+
+**Phase 7 (Notifications, polish, launch-prep) session:** All code-deliverable Phase 7 tasks completed. `device_tokens` migration + `src/lib/notifications.ts` (Expo push token registration on login; foreground display handler). `features/notifications/lib/schedule.ts` (scheduleReminders, cancelAllReminders, isInQuietHours with overnight-window support). `features/notifications/hooks/useReminderSettings.ts` (AsyncStorage-backed; device-local pref; merges with defaults for forward-compat). `app/(tabs)/profile/reminders.tsx` (TimePicker ±hr/±15min, Switch per slot, quiet-hours time range). `supabase/functions/send-report-push/index.ts` (service-role auth; fetches device_tokens; calls Expo Push API; weekly/monthly copy). `supabase/functions/delete-account/index.ts` (JWT auth → service role → admin.deleteUser → cascade). `supabase/functions/export-data/index.ts` (JWT auth → parallel selects across all user tables incl. nested entry tables → JSON download). `src/features/auth/hooks/useAccount.ts` (useDeleteAccount, useExportData, useSignOutAccount). Profile screen (`app/(tabs)/profile/index.tsx`) rewritten: metrics summary, health profile link, reminders row (→ reminders screen), SubscriptionCard, AccountCard (privacy policy, export data, sign out, delete account), disclaimer text. `components/ui/OfflineBanner.tsx` (NetInfo listener, amber bar, accessibilityRole="alert"; mounted in Screen.tsx so it appears on all screens). Home screen: "No logs yet today" card shown when `!hasLoggedToday`. `AiInsightCard`: updated pending message to "Your coach is reviewing last night's data" + deterministic fallback card when generate.isError. `eas.json` created (development/preview/production profiles). `app.json` updated with expo-notifications plugin (color #12A06A, uses app icon as notification icon) + react-native-purchases plugin. `expo-file-system` added via `npm install --legacy-peer-deps` (uses `expo-file-system/legacy` import for the stable functional API). **80/80 domain tests, lint clean, typecheck clean.** Manual remaining: EAS builds, store listings, privacy labels, screenshots, RevenueCat dashboard setup (product IDs + entitlement 'pro'), set EXPO_PUBLIC_PRIVACY_URL EAS secret when privacy policy page is live. Next: Performance pass (FlashList, memoized charts) + E2E tests — deferred post-MVP.
 
 **Phase 6 (Subscriptions) session:** `react-native-purchases` v10 installed. `src/lib/revenuecat.ts` — local `_configured` bool guards all RC calls (avoids awaiting the async `isConfigured()` on every call); `configurePurchases()` called at root-layout module load before any session; `loginPurchases(userId)`/`logoutPurchases()` wired into `SessionProvider`'s `onAuthStateChange` listener; `getCustomerInfoSafe()` + `rcIsProActive()` helpers for the entitlement hook. `useEntitlement` rewritten: checks RC CustomerInfo first (instant unlock after purchase without waiting for webhook), falls back to Supabase `subscriptions` row; subscribes to `addCustomerInfoUpdateListener` so UI updates reactively when purchases complete. `supabase/functions/revenuecat-webhook/index.ts` — verifies `REVENUECAT_WEBHOOK_SECRET` (supports bare token or `Bearer <token>`); maps entitlement_ids → plan via lookup table; derives `status` from `expiration_at_ms` + event type (BILLING_ISSUE → grace, EXPIRATION → expired, future expiry + TRIAL period type → trialing, otherwise active); `isAnnual` detected from product_id containing 'annual'/'yearly' (documented naming convention for store products). `src/app/paywall.tsx` — modal route (`presentation: 'modal'` declared in root Stack); reads live packages from `useOfferings()`; annual package selected by default + "Best value" chip; static ₹99/₹799 fallback when RC is unconfigured in dev; purchase via `usePurchasePackage()` → optimistic entitlement unlock on success; standard IAP disclaimer text. `SubscriptionCard` in Profile — shows current plan badge (Free/Pro), Upgrade button for free users, "Restore purchases" button for all users. All three LockedCard call sites now navigate to `/paywall`. **Two items remain MANUAL** (cannot be done via code): (1) create products + configure entitlement 'pro' in RevenueCat dashboard; (2) enroll in Apple/Google small-business 15% programs. `npm run typecheck`/`lint`/`test` all clean (80/80 tests passing). Next: Phase 7 (Notifications, polish, launch-prep) — pending review.
 

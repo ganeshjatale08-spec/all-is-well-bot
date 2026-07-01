@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
 import { loginPurchases, logoutPurchases } from '../../lib/revenuecat';
+import { registerForPushNotifications } from '../../lib/notifications';
 
 type SessionContextValue = {
   session: Session | null;
@@ -26,6 +27,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       if (nextSession?.user.id) {
         loginPurchases(nextSession.user.id);
+        registerForPushNotifications(nextSession.user.id);
       } else {
         logoutPurchases();
       }
