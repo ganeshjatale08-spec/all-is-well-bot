@@ -20,6 +20,7 @@ import {
 import { queryClient } from '../lib/queryClient';
 import { asyncStoragePersister } from '../lib/persister';
 import { setupNetworkListener } from '../lib/network';
+import { configurePurchases } from '../lib/revenuecat';
 import { SessionProvider, useSession } from '../features/auth/SessionProvider';
 import { useProfile } from '../features/onboarding/hooks/useProfile';
 import { registerJournalMutationDefaults } from '../features/journal/hooks/useLogMutations';
@@ -31,6 +32,10 @@ SplashScreen.preventAutoHideAsync();
 // rehydration — restored mutations have no component-supplied mutationFn
 // and rely entirely on these registered defaults (TRD §7).
 registerJournalMutationDefaults();
+
+// Configure RevenueCat once at module load (before any session). logIn() is
+// called from SessionProvider after the user authenticates (Phase 6).
+configurePurchases();
 
 function RootNavigator() {
   const { session, isLoading } = useSession();
@@ -52,6 +57,8 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={!!session && onboardingComplete}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="report/[id]" />
       </Stack.Protected>
     </Stack>
   );

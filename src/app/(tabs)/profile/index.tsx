@@ -1,9 +1,12 @@
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Screen } from '../../../components/ui/Screen';
 import { Button } from '../../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
 import { useProfile } from '../../../features/onboarding/hooks/useProfile';
+import { useEntitlement } from '../../../features/subscription/hooks/useEntitlement';
+import { useRestorePurchases } from '../../../features/subscription/hooks/useSubscription';
 import {
   calculateBmi,
   calculateBmr,
@@ -29,6 +32,76 @@ function Stat({ label, value }: { label: string; value: string }) {
       <Text className="font-body-medium text-xs text-ink-muted">{label}</Text>
       <Text className="font-display text-xl text-ink">{value}</Text>
     </View>
+  );
+}
+
+function SubscriptionCard() {
+  const router = useRouter();
+  const { data: entitlement, isLoading } = useEntitlement();
+  const restore = useRestorePurchases();
+  const isPro = entitlement?.isProPlus ?? false;
+
+  async function handleRestore() {
+    try {
+      await restore.mutateAsync();
+      Alert.alert(
+        'Purchases restored',
+        restore.data && !restore.data // always fires via onSuccess
+          ? 'You\'re all set!'
+          : 'Your purchases have been restored.',
+      );
+    } catch {
+      Alert.alert('Restore failed', 'Could not restore purchases. Please try again.');
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="items-center py-4">
+        <ActivityIndicator />
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="gap-3">
+      <View className="flex-row items-center justify-between">
+        <Text className="font-body-semibold text-sm text-ink">Subscription</Text>
+        <View
+          className="rounded-full px-2 py-0.5"
+          style={{ backgroundColor: isPro ? '#12A06A' : undefined }}
+        >
+          <Text
+            className={`font-body-semibold text-xs ${isPro ? 'text-surface' : 'text-ink-muted'}`}
+          >
+            {isPro ? 'Pro' : 'Free'}
+          </Text>
+        </View>
+      </View>
+      {isPro ? (
+        <Text className="font-body text-sm text-ink-muted">
+          You have access to all AI features. Manage your subscription in your device&apos;s account settings.
+        </Text>
+      ) : (
+        <>
+          <Text className="font-body text-sm text-ink-muted">
+            Upgrade to Pro for AI daily insights, weekly &amp; monthly reports, and personalised goals.
+          </Text>
+          <Button
+            label="Upgrade to Pro"
+            onPress={() => router.push('/paywall')}
+            size="md"
+          />
+        </>
+      )}
+      <Button
+        label={restore.isPending ? 'Restoring…' : 'Restore purchases'}
+        onPress={handleRestore}
+        loading={restore.isPending}
+        variant="ghost"
+        size="md"
+      />
+    </Card>
   );
 }
 
@@ -70,6 +143,8 @@ export default function Profile() {
         </View>
 
         {hasBasics ? <MetricsSummary profile={profile} /> : null}
+
+        <SubscriptionCard />
 
         <View className="gap-3">
           <Text className="font-body-semibold text-base text-ink">Health profile</Text>

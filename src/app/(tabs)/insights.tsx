@@ -333,7 +333,7 @@ export default function Insights() {
             <LockedCard
               title="Weekly &amp; monthly reports"
               description="Get AI-written insights on your week and month — included with Pro."
-              onPressCta={() => router.push('/(tabs)/profile')}
+              onPressCta={() => router.push('/paywall')}
             />
           )}
         </View>
@@ -347,7 +347,7 @@ export default function Insights() {
             <LockedCard
               title="Monthly goals"
               description="Formula-driven targets set each month based on your pace — included with Pro."
-              onPressCta={() => router.push('/(tabs)/profile')}
+              onPressCta={() => router.push('/paywall')}
             />
           )}
         </View>

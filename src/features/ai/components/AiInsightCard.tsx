@@ -30,7 +30,7 @@ export function AiInsightCard() {
       <LockedCard
         title="AI daily insight"
         description="Get a personalized headline, recommendation, and tomorrow's focus — included with Pro."
-        onPressCta={() => router.push('/(tabs)/profile')}
+        onPressCta={() => router.push('/paywall')}
       />
     );
   }

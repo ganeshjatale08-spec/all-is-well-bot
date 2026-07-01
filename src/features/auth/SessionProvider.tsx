@@ -2,6 +2,7 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from '
 import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
+import { loginPurchases, logoutPurchases } from '../../lib/revenuecat';
 
 type SessionContextValue = {
   session: Session | null;
@@ -23,6 +24,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setIsLoading(false);
+      if (nextSession?.user.id) {
+        loginPurchases(nextSession.user.id);
+      } else {
+        logoutPurchases();
+      }
     });
 
     return () => subscription.subscription.unsubscribe();
